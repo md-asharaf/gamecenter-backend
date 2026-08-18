@@ -4,7 +4,7 @@ import io.jsonwebtoken.Claims;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.adnibog.gamecenter.dto.response.AuthResult;
+import com.adnibog.gamecenter.dto.internal.AuthResult;
 import com.adnibog.gamecenter.entity.User;
 import com.adnibog.gamecenter.exception.BadRequestException;
 import com.adnibog.gamecenter.exception.NotFoundException;

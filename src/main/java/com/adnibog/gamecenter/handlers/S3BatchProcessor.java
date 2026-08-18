@@ -1,20 +1,22 @@
-package com.adnibog.gamecenter.service;
+package com.adnibog.gamecenter.handlers;
 
 import com.adnibog.gamecenter.entity.Question;
+import com.adnibog.gamecenter.service.QuestionService;
+import com.adnibog.gamecenter.service.StorageService;
 import com.adnibog.gamecenter.service.parser.QuestionParser;
 import com.adnibog.gamecenter.service.parser.QuestionParserFactory;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@Service
+@Component
 public class S3BatchProcessor {
 
   private static final Logger logger = LoggerFactory.getLogger(S3BatchProcessor.class);
@@ -34,7 +36,7 @@ public class S3BatchProcessor {
     s3Event.getRecords().forEach(record -> {
       String bucket = record.getS3().getBucket().getName();
       String key = record.getS3().getObject().getKey();
-      
+
       String projectId = "default";
       if (key.contains("/")) {
         projectId = key.substring(0, key.indexOf("/"));
@@ -57,7 +59,7 @@ public class S3BatchProcessor {
 
         for (Question q : questions) {
           q.setProjectId(projectId);
-          questionService.createQuestion(projectId, q);
+          questionService.saveQuestion(projectId, q);
         }
 
         logger.info("Successfully saved {} questions.", questions.size());

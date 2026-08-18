@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.adnibog.gamecenter.dto.response.AuthResult;
+import com.adnibog.gamecenter.dto.internal.AuthResult;
 import com.adnibog.gamecenter.entity.Role;
 import com.adnibog.gamecenter.entity.User;
 import com.adnibog.gamecenter.exception.UnauthorizedException;

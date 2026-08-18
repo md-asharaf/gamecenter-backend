@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import com.adnibog.gamecenter.dto.request.LoginRequest;
 import com.adnibog.gamecenter.dto.request.RefreshRequest;
 import com.adnibog.gamecenter.dto.response.ApiResponse;
-import com.adnibog.gamecenter.dto.response.AuthResult;
+import com.adnibog.gamecenter.dto.internal.AuthResult;
 import com.adnibog.gamecenter.dto.response.LoginResponse;
 import com.adnibog.gamecenter.service.AuthService;
 

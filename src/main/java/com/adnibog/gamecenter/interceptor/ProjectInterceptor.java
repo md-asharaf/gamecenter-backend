@@ -4,7 +4,7 @@ import com.adnibog.gamecenter.entity.User;
 import com.adnibog.gamecenter.entity.Role;
 import com.adnibog.gamecenter.exception.ForbiddenException;
 import com.adnibog.gamecenter.exception.UnauthorizedException;
-import com.adnibog.gamecenter.repository.UserRepository;
+import com.adnibog.gamecenter.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
@@ -20,10 +20,10 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class ProjectInterceptor implements HandlerInterceptor {
 
-  private final UserRepository userRepository;
+  private final UserService userService;
 
-  public ProjectInterceptor(UserRepository userRepository) {
-    this.userRepository = userRepository;
+  public ProjectInterceptor(UserService userService) {
+    this.userService = userService;
   }
 
   @Override
@@ -53,8 +53,7 @@ public class ProjectInterceptor implements HandlerInterceptor {
 
     String projectId = (String) projectIdObj;
 
-    User admin = userRepository.findById(adminId)
-        .orElseThrow(() -> new UnauthorizedException("Admin not found"));
+    User admin = userService.getUserEntityById(adminId);
 
     if (admin.getRole() == Role.SUPER_ADMIN) {
       return true;

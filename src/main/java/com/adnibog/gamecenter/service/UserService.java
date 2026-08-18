@@ -4,6 +4,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.adnibog.gamecenter.dto.response.UserDto;
+import com.adnibog.gamecenter.dto.response.UserPageResponse;
+import com.adnibog.gamecenter.repository.UserPage;
+
 import com.adnibog.gamecenter.entity.User;
 import com.adnibog.gamecenter.exception.BadRequestException;
 import com.adnibog.gamecenter.exception.ConflictException;
@@ -11,6 +14,7 @@ import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.UserMapper;
 import com.adnibog.gamecenter.repository.UserRepository;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -30,8 +34,21 @@ public class UserService {
     this.userMapper = userMapper;
   }
 
-  public List<UserDto> getAllAdmins() {
-    return userRepository.findAll().stream().map(userMapper::toDto).collect(Collectors.toList());
+  public User getUserEntityById(String id) {
+    return userRepository.findById(id).orElseThrow(() -> new NotFoundException("Admin not found"));
+  }
+
+  public UserDto getAdminById(String id) {
+    return userMapper.toDto(getUserEntityById(id));
+  }
+
+  public UserPageResponse getAllAdmins(String currentAdminId, int limit, String lastEvaluatedKey, String search) {
+    UserPage page = userRepository.findUsers(limit, lastEvaluatedKey, search);
+    List<UserDto> dtos = page.getItems().stream()
+        .filter(user -> !user.getId().equals(currentAdminId))
+        .map(userMapper::toDto)
+        .collect(Collectors.toList());
+    return new UserPageResponse(dtos, page.getLastEvaluatedKey());
   }
 
   public UserDto updateAdmin(String id, String email, String password, Set<String> projectIds) {
@@ -88,5 +105,28 @@ public class UserService {
         .build();
 
     userRepository.save(user);
+  }
+
+  public void addProjectToAdmin(String adminId, String projectId) {
+    User admin = getUserEntityById(adminId);
+    Set<String> projectIds = admin.getProjectIds();
+    if (projectIds == null) {
+      projectIds = new HashSet<>();
+    }
+    projectIds.add(projectId);
+    admin.setProjectIds(projectIds);
+    admin.setUpdatedAt(System.currentTimeMillis());
+    userRepository.save(admin);
+  }
+
+  public void removeProjectFromAllAdmins(String projectId) {
+    userRepository.findAll().forEach(user -> {
+      Set<String> projectIds = user.getProjectIds();
+      if (projectIds != null && projectIds.remove(projectId)) {
+        user.setProjectIds(projectIds);
+        user.setUpdatedAt(System.currentTimeMillis());
+        userRepository.save(user);
+      }
+    });
   }
 }

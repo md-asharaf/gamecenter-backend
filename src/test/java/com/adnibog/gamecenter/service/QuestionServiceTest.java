@@ -24,9 +24,7 @@ import com.adnibog.gamecenter.dto.response.QuestionDto;
 import com.adnibog.gamecenter.entity.Project;
 import com.adnibog.gamecenter.entity.Question;
 import com.adnibog.gamecenter.exception.BadRequestException;
-import com.adnibog.gamecenter.mapper.ProjectMapper;
 import com.adnibog.gamecenter.mapper.QuestionMapper;
-import com.adnibog.gamecenter.repository.ProjectRepository;
 import com.adnibog.gamecenter.repository.QuestionRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,31 +37,24 @@ class QuestionServiceTest {
   private QuestionMapper questionMapper;
 
   @Mock
-  private ProjectRepository projectRepository;
-
-  @Mock
-  private ProjectMapper projectMapper;
+  private ProjectService projectService;
 
   private QuestionService questionService;
 
   @BeforeEach
   void setUp() {
-    questionService = new QuestionService(questionRepository, questionMapper, projectRepository, projectMapper);
+    questionService = new QuestionService(questionRepository, questionMapper, projectService);
   }
 
   @Test
   void createQuestionFromRequest_Success() {
     String projectId = "proj1";
-    Project project = new Project();
-    project.setField1Label("Word");
-    project.setField2Label("Meaning");
 
     ProjectDto projectDto = new ProjectDto();
     projectDto.setField1Label("Word");
     projectDto.setField2Label("Meaning");
 
-    when(projectRepository.findByProjectId(projectId)).thenReturn(Optional.of(project));
-    when(projectMapper.toDto(project)).thenReturn(projectDto);
+    when(projectService.getProjectById(projectId)).thenReturn(projectDto);
 
     CreateQuestionRequest req = new CreateQuestionRequest();
     req.setDynamicFields(new HashMap<>(Map.of("Word", "Apple", "Meaning", "A fruit")));
@@ -75,7 +66,7 @@ class QuestionServiceTest {
 
     when(questionMapper.toDto(any(Question.class), eq(projectDto))).thenReturn(expectedDto);
 
-    QuestionDto result = questionService.createQuestionFromRequest(projectId, req);
+    QuestionDto result = questionService.createQuestion(projectId, req);
 
     assertNotNull(result);
     verify(questionRepository).save(any(Question.class));
@@ -84,21 +75,17 @@ class QuestionServiceTest {
   @Test
   void createQuestionFromRequest_MissingPrimaryField_ThrowsBadRequest() {
     String projectId = "proj1";
-    Project project = new Project();
-    project.setField1Label("Word");
-    project.setField2Label("Meaning");
 
     ProjectDto projectDto = new ProjectDto();
     projectDto.setField1Label("Word");
     projectDto.setField2Label("Meaning");
 
-    when(projectRepository.findByProjectId(projectId)).thenReturn(Optional.of(project));
-    when(projectMapper.toDto(project)).thenReturn(projectDto);
+    when(projectService.getProjectById(projectId)).thenReturn(projectDto);
 
     CreateQuestionRequest req = new CreateQuestionRequest();
     req.setDynamicFields(new HashMap<>(Map.of("Meaning", "A fruit")));
 
-    assertThrows(BadRequestException.class, () -> questionService.createQuestionFromRequest(projectId, req));
+    assertThrows(BadRequestException.class, () -> questionService.createQuestion(projectId, req));
     verify(questionRepository, never()).save(any());
   }
 
@@ -107,14 +94,10 @@ class QuestionServiceTest {
     String projectId = "proj1";
     String qId = "q1";
 
-    Project project = new Project();
-    project.setField1Label("Word");
-
     ProjectDto projectDto = new ProjectDto();
     projectDto.setField1Label("Word");
 
-    when(projectRepository.findByProjectId(projectId)).thenReturn(Optional.of(project));
-    when(projectMapper.toDto(project)).thenReturn(projectDto);
+    when(projectService.getProjectById(projectId)).thenReturn(projectDto);
 
     Question existing = new Question();
     existing.setId(qId);
@@ -141,11 +124,12 @@ class QuestionServiceTest {
   @Test
   void generateQuiz_NotEnoughQuestions() {
     String projectId = "proj1";
+
     Project project = new Project();
     project.setNumberOfQuestionsInQuiz(10);
 
-    when(projectRepository.findByProjectId(projectId)).thenReturn(Optional.of(project));
-    when(projectMapper.toDto(project)).thenReturn(new ProjectDto());
+    when(projectService.getProjectEntityById(projectId)).thenReturn(project);
+    when(projectService.getProjectById(projectId)).thenReturn(new ProjectDto());
 
     List<Question> questions = new ArrayList<>();
     for (int i = 0; i < 5; i++) {

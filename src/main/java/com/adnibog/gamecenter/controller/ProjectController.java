@@ -10,17 +10,19 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.adnibog.gamecenter.dto.request.CreateProjectRequest;
 import com.adnibog.gamecenter.dto.request.UpdateProjectRequest;
 import com.adnibog.gamecenter.dto.response.ApiResponse;
 import com.adnibog.gamecenter.dto.response.ProjectDto;
+import com.adnibog.gamecenter.dto.response.ProjectPageResponse;
+
 import com.adnibog.gamecenter.service.ProjectService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
-import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -49,9 +51,13 @@ public class ProjectController {
 
   @Operation(summary = "List Projects", description = "Lists all projects accessible to the current admin.")
   @GetMapping
-  public ResponseEntity<ApiResponse<List<ProjectDto>>> listProjects(HttpServletRequest request) {
+  public ResponseEntity<ApiResponse<ProjectPageResponse>> listProjects(
+      HttpServletRequest request,
+      @RequestParam(defaultValue = "10") int limit,
+      @RequestParam(required = false) String lastEvaluatedKey,
+      @RequestParam(required = false) String search) {
     String adminId = (String) request.getAttribute("adminId");
-    List<ProjectDto> projects = projectService.listProjectsForAdmin(adminId);
+    ProjectPageResponse projects = projectService.listProjects(adminId, limit, lastEvaluatedKey, search);
     return ResponseEntity.ok(ApiResponse.success(projects));
   }
 

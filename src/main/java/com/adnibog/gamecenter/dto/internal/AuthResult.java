@@ -1,4 +1,4 @@
-package com.adnibog.gamecenter.dto.response;
+package com.adnibog.gamecenter.dto.internal;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

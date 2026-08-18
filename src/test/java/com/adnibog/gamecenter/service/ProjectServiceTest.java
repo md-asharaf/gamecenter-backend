@@ -24,7 +24,6 @@ import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.ProjectMapper;
 import com.adnibog.gamecenter.repository.ProjectRepository;
 import com.adnibog.gamecenter.repository.QuestionRepository;
-import com.adnibog.gamecenter.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectServiceTest {
@@ -36,7 +35,7 @@ class ProjectServiceTest {
   private QuestionRepository questionRepository;
 
   @Mock
-  private UserRepository userRepository;
+  private UserService userService;
 
   @Mock
   private ProjectMapper projectMapper;
@@ -45,7 +44,7 @@ class ProjectServiceTest {
 
   @BeforeEach
   void setUp() {
-    projectService = new ProjectService(projectRepository, questionRepository, userRepository, projectMapper);
+    projectService = new ProjectService(projectRepository, questionRepository, userService, projectMapper);
   }
 
   @Test
@@ -57,12 +56,10 @@ class ProjectServiceTest {
     CreateProjectRequest req = new CreateProjectRequest();
     req.setName("Test Project");
 
-    Project expectedProject = new Project();
-    expectedProject.setName("Test Project");
     ProjectDto expectedDto = new ProjectDto();
     expectedDto.setName("Test Project");
 
-    when(userRepository.findById("admin1")).thenReturn(Optional.of(admin));
+    when(userService.getUserEntityById("admin1")).thenReturn(admin);
     when(projectMapper.toDto(any(Project.class))).thenReturn(expectedDto);
 
     ProjectDto result = projectService.createProject("admin1", req);
@@ -70,7 +67,7 @@ class ProjectServiceTest {
     assertNotNull(result);
     assertEquals("Test Project", result.getName());
     verify(projectRepository).save(any(Project.class));
-    verify(userRepository).save(admin);
+    verify(userService).addProjectToAdmin(eq("admin1"), any(String.class));
   }
 
   @Test
@@ -82,7 +79,7 @@ class ProjectServiceTest {
     CreateProjectRequest req = new CreateProjectRequest();
     req.setName("Test Project");
 
-    when(userRepository.findById("subadmin1")).thenReturn(Optional.of(admin));
+    when(userService.getUserEntityById("subadmin1")).thenReturn(admin);
 
     assertThrows(ForbiddenException.class, () -> projectService.createProject("subadmin1", req));
     verify(projectRepository, never()).save(any(Project.class));
@@ -100,7 +97,7 @@ class ProjectServiceTest {
     Project existing = new Project();
     existing.setName("Test Project");
 
-    when(userRepository.findById("admin1")).thenReturn(Optional.of(admin));
+    when(userService.getUserEntityById("admin1")).thenReturn(admin);
     when(projectRepository.findByName("Test Project")).thenReturn(Optional.of(existing));
 
     assertThrows(ConflictException.class, () -> projectService.createProject("admin1", req));
@@ -120,7 +117,7 @@ class ProjectServiceTest {
     other.setId("proj2");
     other.setName("New Name");
 
-    when(projectRepository.findByProjectId("proj1")).thenReturn(Optional.of(project));
+    when(projectRepository.findById("proj1")).thenReturn(Optional.of(project));
     when(projectRepository.findByName("New Name")).thenReturn(Optional.of(other));
 
     assertThrows(ConflictException.class, () -> projectService.updateProject("proj1", req));
@@ -132,25 +129,18 @@ class ProjectServiceTest {
     User admin = new User();
     admin.setId("admin1");
     admin.setRole(Role.SUPER_ADMIN);
-    admin.setProjectIds(new java.util.HashSet<>(java.util.Set.of("proj1")));
 
     Project project = new Project();
     project.setId("proj1");
 
-    User otherAdmin = new User();
-    otherAdmin.setId("admin2");
-    otherAdmin.setRole(Role.SUB_ADMIN);
-    otherAdmin.setProjectIds(new java.util.HashSet<>(java.util.Set.of("proj1", "proj2")));
-
-    when(userRepository.findById("admin1")).thenReturn(Optional.of(admin));
-    when(projectRepository.findByProjectId("proj1")).thenReturn(Optional.of(project));
-    when(userRepository.findAll()).thenReturn(java.util.List.of(admin, otherAdmin));
+    when(userService.getUserEntityById("admin1")).thenReturn(admin);
+    when(projectRepository.findById("proj1")).thenReturn(Optional.of(project));
 
     projectService.deleteProject("admin1", "proj1");
 
     verify(questionRepository).deleteAllByProjectId("proj1");
-    verify(projectRepository).deleteByProjectId("proj1");
-    verify(userRepository, times(1)).save(otherAdmin);
+    verify(projectRepository).deleteById("proj1");
+    verify(userService).removeProjectFromAllAdmins("proj1");
   }
 
   @Test
@@ -159,10 +149,10 @@ class ProjectServiceTest {
     admin.setId("subadmin1");
     admin.setRole(Role.SUB_ADMIN);
 
-    when(userRepository.findById("subadmin1")).thenReturn(Optional.of(admin));
+    when(userService.getUserEntityById("subadmin1")).thenReturn(admin);
 
     assertThrows(ForbiddenException.class, () -> projectService.deleteProject("subadmin1", "proj1"));
-    verify(projectRepository, never()).deleteByProjectId(any());
+    verify(projectRepository, never()).deleteById(any());
   }
 
   @Test
@@ -171,10 +161,10 @@ class ProjectServiceTest {
     admin.setId("admin1");
     admin.setRole(Role.SUPER_ADMIN);
 
-    when(userRepository.findById("admin1")).thenReturn(Optional.of(admin));
-    when(projectRepository.findByProjectId("missing")).thenReturn(Optional.empty());
+    when(userService.getUserEntityById("admin1")).thenReturn(admin);
+    when(projectRepository.findById("missing")).thenReturn(Optional.empty());
 
     assertThrows(NotFoundException.class, () -> projectService.deleteProject("admin1", "missing"));
-    verify(projectRepository, never()).deleteByProjectId(any());
+    verify(projectRepository, never()).deleteById(any());
   }
 }

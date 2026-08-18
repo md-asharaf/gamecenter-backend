@@ -8,7 +8,14 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.Expression;
+import software.amazon.awssdk.enhanced.dynamodb.model.Page;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -45,5 +52,53 @@ public class DynamoDbUserRepository implements UserRepository {
   @Override
   public void deleteById(String id) {
     userTable.deleteItem(Key.builder().partitionValue(id).build());
+  }
+
+  @Override
+  public UserPage findUsers(int limit, String lastEvaluatedKeyId, String searchKeyword) {
+    Map<String, AttributeValue> exclusiveStartKey = null;
+    if (lastEvaluatedKeyId != null && !lastEvaluatedKeyId.equals("null") && !lastEvaluatedKeyId.trim().isEmpty()) {
+      exclusiveStartKey = new HashMap<>();
+      exclusiveStartKey.put("id", AttributeValue.builder().s(lastEvaluatedKeyId).build());
+    }
+
+    final Map<String, AttributeValue> finalExclusiveStartKey = exclusiveStartKey;
+    List<User> resultItems = new ArrayList<>();
+    String nextKey = null;
+
+    Expression filterExpression = null;
+    if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+      Map<String, AttributeValue> expressionValues = new HashMap<>();
+      expressionValues.put(":searchKeyword", AttributeValue.builder().s(searchKeyword).build());
+      Map<String, String> expressionNames = new HashMap<>();
+      expressionNames.put("#email", "email");
+
+      filterExpression = Expression.builder()
+          .expression("contains(#email, :searchKeyword)")
+          .expressionNames(expressionNames)
+          .expressionValues(expressionValues)
+          .build();
+    }
+
+    final Expression finalFilterExpression = filterExpression;
+
+    Page<User> firstPage = userTable.scan(r -> {
+      r.limit(limit);
+      if (finalExclusiveStartKey != null) {
+        r.exclusiveStartKey(finalExclusiveStartKey);
+      }
+      if (finalFilterExpression != null) {
+        r.filterExpression(finalFilterExpression);
+      }
+    }).stream().findFirst().orElse(null);
+
+    if (firstPage != null) {
+      resultItems.addAll(firstPage.items());
+      if (firstPage.lastEvaluatedKey() != null && firstPage.lastEvaluatedKey().containsKey("id")) {
+        nextKey = firstPage.lastEvaluatedKey().get("id").s();
+      }
+    }
+
+    return new UserPage(resultItems, nextKey);
   }
 }

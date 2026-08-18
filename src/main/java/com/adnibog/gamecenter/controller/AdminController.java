@@ -7,13 +7,12 @@ import com.adnibog.gamecenter.dto.request.RegisterAdminRequest;
 import com.adnibog.gamecenter.dto.request.UpdateAdminRequest;
 import com.adnibog.gamecenter.dto.response.ApiResponse;
 import com.adnibog.gamecenter.dto.response.UserDto;
+import com.adnibog.gamecenter.dto.response.UserPageResponse;
+
 import com.adnibog.gamecenter.service.UserService;
 
 import org.springframework.http.HttpStatus;
 import jakarta.validation.Valid;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admins")
@@ -33,18 +32,17 @@ public class AdminController {
 
   @GetMapping("/me")
   public ResponseEntity<ApiResponse<UserDto>> getMe(@RequestAttribute("adminId") String currentAdminId) {
-    UserDto me = userService.getAllAdmins().stream()
-        .filter(admin -> admin.getId().equals(currentAdminId))
-        .findFirst()
-        .orElseThrow(() -> new RuntimeException("Admin not found"));
+    UserDto me = userService.getAdminById(currentAdminId);
     return ResponseEntity.ok(ApiResponse.success(me));
   }
 
   @GetMapping
-  public ResponseEntity<ApiResponse<List<UserDto>>> listAdmins(@RequestAttribute("adminId") String currentAdminId) {
-    List<UserDto> admins = userService.getAllAdmins().stream()
-        .filter(admin -> !admin.getId().equals(currentAdminId))
-        .collect(Collectors.toList());
+  public ResponseEntity<ApiResponse<UserPageResponse>> listAdmins(
+      @RequestAttribute("adminId") String currentAdminId,
+      @RequestParam(defaultValue = "10") int limit,
+      @RequestParam(required = false) String lastEvaluatedKey,
+      @RequestParam(required = false) String search) {
+    UserPageResponse admins = userService.getAllAdmins(currentAdminId, limit, lastEvaluatedKey, search);
     return ResponseEntity.ok(ApiResponse.success(admins));
   }
 

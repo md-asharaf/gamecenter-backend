@@ -14,4 +14,6 @@ public interface UserRepository {
   java.util.List<User> findAll();
 
   void deleteById(String id);
+
+  UserPage findUsers(int limit, String lastEvaluatedKeyId, String searchKeyword);
 }

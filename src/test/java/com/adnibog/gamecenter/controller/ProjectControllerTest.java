@@ -85,13 +85,14 @@ class ProjectControllerTest {
     projectDto.setId("proj_123");
     projectDto.setName("Test Project");
 
-    when(projectService.listProjectsForAdmin("admin_123")).thenReturn(List.of(projectDto));
+    when(projectService.listProjects("admin_123", 10, null, null))
+        .thenReturn(new com.adnibog.gamecenter.dto.response.ProjectPageResponse(List.of(projectDto), null));
 
     mockMvc.perform(get("/projects")
         .requestAttr("adminId", "admin_123"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data[0].id").value("proj_123"))
-        .andExpect(jsonPath("$.data[0].name").value("Test Project"));
+        .andExpect(jsonPath("$.data.items[0].id").value("proj_123"))
+        .andExpect(jsonPath("$.data.items[0].name").value("Test Project"));
   }
 
   @Test

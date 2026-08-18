@@ -53,7 +53,7 @@ class QuestionControllerTest {
     questionDto.setField1("Apple");
     questionDto.setProjects(projectDto);
 
-    when(questionService.createQuestionFromRequest(eq("proj_123"), any(CreateQuestionRequest.class)))
+    when(questionService.createQuestion(eq("proj_123"), any(CreateQuestionRequest.class)))
         .thenReturn(questionDto);
 
     String json = "{\"dynamicFields\":{\"Word\":\"Apple\"}}";

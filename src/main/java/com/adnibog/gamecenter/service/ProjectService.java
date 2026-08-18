@@ -5,6 +5,9 @@ import org.springframework.stereotype.Service;
 import com.adnibog.gamecenter.dto.request.CreateProjectRequest;
 import com.adnibog.gamecenter.dto.request.UpdateProjectRequest;
 import com.adnibog.gamecenter.dto.response.ProjectDto;
+import com.adnibog.gamecenter.dto.response.ProjectPageResponse;
+import com.adnibog.gamecenter.repository.ProjectPage;
+
 import com.adnibog.gamecenter.entity.Project;
 import com.adnibog.gamecenter.entity.User;
 import com.adnibog.gamecenter.exception.BadRequestException;
@@ -13,12 +16,9 @@ import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.ProjectMapper;
 import com.adnibog.gamecenter.repository.ProjectRepository;
 import com.adnibog.gamecenter.repository.QuestionRepository;
-import com.adnibog.gamecenter.repository.UserRepository;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -32,20 +32,28 @@ public class ProjectService {
 
   private final ProjectRepository projectRepository;
   private final QuestionRepository questionRepository;
-  private final UserRepository userRepository;
+  private final UserService userService;
   private final ProjectMapper projectMapper;
 
   public ProjectService(ProjectRepository projectRepository, QuestionRepository questionRepository,
-      UserRepository userRepository, ProjectMapper projectMapper) {
+      UserService userService, ProjectMapper projectMapper) {
     this.projectRepository = projectRepository;
     this.questionRepository = questionRepository;
-    this.userRepository = userRepository;
+    this.userService = userService;
     this.projectMapper = projectMapper;
   }
 
+  public Project getProjectEntityById(String projectId) {
+    return projectRepository.findById(projectId)
+        .orElseThrow(() -> new NotFoundException("Project not found"));
+  }
+
+  public ProjectDto getProjectById(String projectId) {
+    return projectMapper.toDto(getProjectEntityById(projectId));
+  }
+
   public ProjectDto createProject(String adminId, CreateProjectRequest req) {
-    User admin = userRepository.findById(adminId)
-        .orElseThrow(() -> new NotFoundException("Admin not found"));
+    User admin = userService.getUserEntityById(adminId);
 
     if (admin.getRole() != Role.SUPER_ADMIN) {
       log.warn("Admin {} attempted to create a project but is not a SUPER_ADMIN", adminId);
@@ -72,43 +80,52 @@ public class ProjectService {
 
     projectRepository.save(project);
 
-    Set<String> projectIds = admin.getProjectIds();
-    if (projectIds == null) {
-      projectIds = new HashSet<>();
-    }
-    projectIds.add(id);
-    admin.setProjectIds(projectIds);
-    admin.setUpdatedAt(now);
-    userRepository.save(admin);
+    userService.addProjectToAdmin(adminId, id);
 
     log.info("Project '{}' ({}) successfully created by Admin {}", project.getName(), id, adminId);
     return projectMapper.toDto(project);
   }
 
-  public List<ProjectDto> listProjectsForAdmin(String adminId) {
-    User admin = userRepository.findById(adminId)
-        .orElseThrow(() -> new NotFoundException("Admin not found"));
+  public ProjectPageResponse listProjects(String adminId, int limit, String lastEvaluatedKey, String search) {
+    User admin = userService.getUserEntityById(adminId);
 
     if (admin.getRole() == Role.SUPER_ADMIN) {
-      return projectRepository.findAll().stream()
-          .map(projectMapper::toDto)
-          .collect(Collectors.toList());
+      ProjectPage page = projectRepository.findProjects(limit, lastEvaluatedKey, search);
+      List<ProjectDto> dtos = page.getItems().stream().map(projectMapper::toDto).collect(Collectors.toList());
+      return new ProjectPageResponse(dtos, page.getLastEvaluatedKey());
     }
 
     if (admin.getProjectIds() == null || admin.getProjectIds().isEmpty()) {
-      return new ArrayList<>();
+      return new ProjectPageResponse(new ArrayList<>(), null);
     }
 
-    return admin.getProjectIds().stream()
-        .map(projectId -> projectRepository.findByProjectId(projectId).orElse(null))
+    List<ProjectDto> allAllowed = admin.getProjectIds().stream()
+        .map(projectId -> projectRepository.findById(projectId).orElse(null))
         .filter(project -> project != null)
+        .filter(project -> search == null || search.trim().isEmpty()
+            || project.getName().toLowerCase().contains(search.toLowerCase()))
         .map(projectMapper::toDto)
         .collect(Collectors.toList());
+
+    int startIndex = 0;
+    if (lastEvaluatedKey != null && !lastEvaluatedKey.isEmpty()) {
+      for (int i = 0; i < allAllowed.size(); i++) {
+        if (allAllowed.get(i).getId().equals(lastEvaluatedKey)) {
+          startIndex = i + 1;
+          break;
+        }
+      }
+    }
+
+    int endIndex = Math.min(startIndex + limit, allAllowed.size());
+    List<ProjectDto> paged = allAllowed.subList(startIndex, endIndex);
+    String nextKey = endIndex < allAllowed.size() ? paged.get(paged.size() - 1).getId() : null;
+
+    return new ProjectPageResponse(paged, nextKey);
   }
 
   public ProjectDto updateProject(String projectId, UpdateProjectRequest req) {
-    Project project = projectRepository.findByProjectId(projectId)
-        .orElseThrow(() -> new NotFoundException("Project not found"));
+    Project project = getProjectEntityById(projectId);
 
     if (req.getNumberOfQuestionsInQuiz() != null) {
       project.setNumberOfQuestionsInQuiz(req.getNumberOfQuestionsInQuiz());
@@ -154,32 +171,19 @@ public class ProjectService {
   }
 
   public void deleteProject(String adminId, String projectId) {
-    User admin = userRepository.findById(adminId)
-        .orElseThrow(() -> new NotFoundException("Admin not found"));
+    User admin = userService.getUserEntityById(adminId);
 
     if (admin.getRole() != Role.SUPER_ADMIN) {
       log.warn("Admin {} attempted to delete project {} but is not a SUPER_ADMIN", adminId, projectId);
       throw new ForbiddenException("Only Super Admin can delete a project");
     }
 
-    projectRepository.findByProjectId(projectId)
-        .orElseThrow(() -> new NotFoundException("Project not found"));
+    getProjectEntityById(projectId);
 
     questionRepository.deleteAllByProjectId(projectId);
-    projectRepository.deleteByProjectId(projectId);
-    removeProjectFromAdmins(projectId);
+    projectRepository.deleteById(projectId);
+    userService.removeProjectFromAllAdmins(projectId);
 
     log.info("Project {} successfully deleted by Admin {}", projectId, adminId);
-  }
-
-  private void removeProjectFromAdmins(String projectId) {
-    userRepository.findAll().forEach(user -> {
-      Set<String> projectIds = user.getProjectIds();
-      if (projectIds != null && projectIds.remove(projectId)) {
-        user.setProjectIds(projectIds);
-        user.setUpdatedAt(System.currentTimeMillis());
-        userRepository.save(user);
-      }
-    });
   }
 }

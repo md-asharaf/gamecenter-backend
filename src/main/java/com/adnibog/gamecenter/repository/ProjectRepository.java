@@ -6,13 +6,15 @@ import java.util.List;
 import com.adnibog.gamecenter.entity.Project;
 
 public interface ProjectRepository {
-  Optional<Project> findByProjectId(String projectId);
+  Optional<Project> findById(String projectId);
 
   Optional<Project> findByName(String name);
 
   void save(Project project);
 
-  void deleteByProjectId(String projectId);
+  void deleteById(String projectId);
 
   List<Project> findAll();
+
+  ProjectPage findProjects(int limit, String lastEvaluatedKeyId, String searchKeyword);
 }

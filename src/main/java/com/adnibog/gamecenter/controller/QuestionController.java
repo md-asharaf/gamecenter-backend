@@ -44,7 +44,7 @@ public class QuestionController {
   public ResponseEntity<ApiResponse<QuestionDto>> createQuestion(
       @PathVariable String projectId,
       @Valid @RequestBody CreateQuestionRequest req) {
-    QuestionDto created = questionService.createQuestionFromRequest(projectId, req);
+    QuestionDto created = questionService.createQuestion(projectId, req);
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(ApiResponse.success(created, "Question created successfully"));
   }

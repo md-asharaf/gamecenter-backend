@@ -13,10 +13,8 @@ import com.adnibog.gamecenter.entity.Project;
 import com.adnibog.gamecenter.exception.BadRequestException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.QuestionMapper;
-import com.adnibog.gamecenter.mapper.ProjectMapper;
 import com.adnibog.gamecenter.repository.QuestionPage;
 import com.adnibog.gamecenter.repository.QuestionRepository;
-import com.adnibog.gamecenter.repository.ProjectRepository;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,108 +30,97 @@ public class QuestionService {
 
   private final QuestionRepository questionRepository;
   private final QuestionMapper questionMapper;
-  private final ProjectRepository projectRepository;
-  private final ProjectMapper projectMapper;
+  private final ProjectService projectService;
 
   public QuestionService(QuestionRepository questionRepository, QuestionMapper questionMapper,
-      ProjectRepository projectRepository, ProjectMapper projectMapper) {
+      ProjectService projectService) {
     this.questionRepository = questionRepository;
     this.questionMapper = questionMapper;
-    this.projectRepository = projectRepository;
-    this.projectMapper = projectMapper;
-  }
-
-  private ProjectDto getProjects(String projectId) {
-    Project project = projectRepository.findByProjectId(projectId)
-        .orElseThrow(() -> new NotFoundException("Project not found"));
-    return projectMapper.toDto(project);
+    this.projectService = projectService;
   }
 
   public QuestionPageResponse getQuestions(String projectId, int limit, String lastEvaluatedKeyId,
       String searchKeyword) {
-    ProjectDto projects = getProjects(projectId);
+    ProjectDto project = projectService.getProjectById(projectId);
     QuestionPage page = questionRepository.findQuestions(projectId, limit, lastEvaluatedKeyId, searchKeyword);
     List<QuestionDto> dtos = page.getItems().stream()
-        .map(q -> questionMapper.toDto(q, projects))
+        .map(q -> questionMapper.toDto(q, project))
         .collect(Collectors.toList());
     return new QuestionPageResponse(dtos, page.getLastEvaluatedKey());
   }
 
   public QuestionDto getQuestionById(String projectId, String id) {
-    ProjectDto projects = getProjects(projectId);
+    ProjectDto project = projectService.getProjectById(projectId);
     Question q = questionRepository.findById(projectId, id)
         .orElseThrow(() -> new NotFoundException("Question not found"));
-    return questionMapper.toDto(q, projects);
+    return questionMapper.toDto(q, project);
   }
 
-  public QuestionDto createQuestion(String projectId, Question q) {
-    ProjectDto projects = getProjects(projectId);
+  public QuestionDto createQuestion(String projectId, CreateQuestionRequest req) {
+    ProjectDto project = projectService.getProjectById(projectId);
+    Map<String, String> dynamicFields = req.getDynamicFields();
+
+    String field1 = dynamicFields.get(project.getField1Label());
+    String field2 = dynamicFields.get(project.getField2Label());
+    String field3 = dynamicFields.get(project.getField3Label());
+
+    if (field1 == null || field1.trim().isEmpty()) {
+      throw new BadRequestException("The primary question field cannot be empty");
+    }
+
+    if (project.getField2Label() != null && !project.getField2Label().isEmpty() &&
+        (field2 == null || field2.trim().isEmpty())) {
+      throw new BadRequestException("The secondary question field cannot be empty");
+    }
+
+    long now = System.currentTimeMillis();
+    Question q = new Question();
+    q.setProjectId(projectId);
+    q.setId(UUID.randomUUID().toString());
+    q.setField1(field1);
+    q.setField2(field2);
+    q.setField3(field3);
+    q.setCreatedAt(now);
+    q.setUpdatedAt(now);
+    questionRepository.save(q);
+
+    log.info("Created question {} from request for project {}", q.getId(), projectId);
+    return questionMapper.toDto(q, project);
+  }
+
+  public void saveQuestion(String projectId, Question q) {
+    projectService.getProjectById(projectId);
     long now = System.currentTimeMillis();
     q.setProjectId(projectId);
-    if (q.getId() == null || q.getId().trim().isEmpty()) {
-      q.setId(UUID.randomUUID().toString());
+    if (q.getId() == null || q.getId().isBlank()) {
+      q.setId(java.util.UUID.randomUUID().toString());
       q.setCreatedAt(now);
     } else if (q.getCreatedAt() == null) {
       q.setCreatedAt(now);
     }
     q.setUpdatedAt(now);
     questionRepository.save(q);
-
-    log.info("Created question {} for project {}", q.getId(), projectId);
-    return questionMapper.toDto(q, projects);
-  }
-
-  public QuestionDto createQuestionFromRequest(String projectId, CreateQuestionRequest req) {
-    ProjectDto projects = getProjects(projectId);
-    Map<String, String> dynamicFields = req.getDynamicFields();
-
-    String field1 = dynamicFields.get(projects.getField1Label());
-    String field2 = dynamicFields.get(projects.getField2Label());
-    String field3 = dynamicFields.get(projects.getField3Label());
-
-    if (field1 == null || field1.trim().isEmpty()) {
-      throw new BadRequestException("The primary question field cannot be empty");
-    }
-
-    if (projects.getField2Label() != null && !projects.getField2Label().isEmpty() &&
-        (field2 == null || field2.trim().isEmpty())) {
-      throw new BadRequestException("The secondary question field cannot be empty");
-    }
-
-    Question q = new Question();
-    q.setField1(field1);
-    q.setField2(field2);
-    q.setField3(field3);
-
-    long now = System.currentTimeMillis();
-    q.setProjectId(projectId);
-    q.setId(UUID.randomUUID().toString());
-    q.setCreatedAt(now);
-    q.setUpdatedAt(now);
-    questionRepository.save(q);
-
-    log.info("Created question {} from request for project {}", q.getId(), projectId);
-    return questionMapper.toDto(q, projects);
+    log.info("Saved question {} for project {} via batch import", q.getId(), projectId);
   }
 
   public QuestionDto updateQuestion(String projectId, String id, UpdateQuestionRequest req) {
-    ProjectDto projects = getProjects(projectId);
+    ProjectDto project = projectService.getProjectById(projectId);
     Question existing = questionRepository.findById(projectId, id)
         .orElseThrow(() -> new NotFoundException("Question not found"));
 
     Map<String, String> dynamicFields = req.getDynamicFields();
 
     boolean updated = false;
-    if (dynamicFields.containsKey(projects.getField1Label())) {
-      existing.setField1(dynamicFields.get(projects.getField1Label()));
+    if (dynamicFields.containsKey(project.getField1Label())) {
+      existing.setField1(dynamicFields.get(project.getField1Label()));
       updated = true;
     }
-    if (dynamicFields.containsKey(projects.getField2Label())) {
-      existing.setField2(dynamicFields.get(projects.getField2Label()));
+    if (dynamicFields.containsKey(project.getField2Label())) {
+      existing.setField2(dynamicFields.get(project.getField2Label()));
       updated = true;
     }
-    if (dynamicFields.containsKey(projects.getField3Label())) {
-      existing.setField3(dynamicFields.get(projects.getField3Label()));
+    if (dynamicFields.containsKey(project.getField3Label())) {
+      existing.setField3(dynamicFields.get(project.getField3Label()));
       updated = true;
     }
 
@@ -145,7 +132,7 @@ public class QuestionService {
     questionRepository.save(existing);
 
     log.info("Updated question {} in project {}", id, projectId);
-    return questionMapper.toDto(existing, projects);
+    return questionMapper.toDto(existing, project);
   }
 
   public void deleteQuestion(String projectId, String id) {
@@ -156,9 +143,8 @@ public class QuestionService {
   }
 
   public List<QuizQuestion> generateQuiz(String projectId) {
-    Project project = projectRepository.findByProjectId(projectId)
-        .orElseThrow(() -> new NotFoundException("Project not found"));
-    ProjectDto projectDto = projectMapper.toDto(project);
+    Project project = projectService.getProjectEntityById(projectId);
+    ProjectDto projectDto = projectService.getProjectById(projectId);
 
     int numberOfQuestions = project.getNumberOfQuestionsInQuiz() != null ? project.getNumberOfQuestionsInQuiz() : 10;
     String mainField = project.getMainQuestionField() != null ? project.getMainQuestionField() : "field1";
