@@ -14,7 +14,9 @@ import com.adnibog.vocabkicker.exception.UnauthorizedException;
 import com.adnibog.vocabkicker.repository.UserRepository;
 
 import org.springframework.lang.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 public class AdminAuthInterceptor implements HandlerInterceptor {
 
@@ -40,8 +42,12 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
 
     if (request.getRequestURI().startsWith("/admins")) {
       User admin = userRepository.findById(adminId)
-          .orElseThrow(() -> new UnauthorizedException("Admin not found"));
+          .orElseThrow(() -> {
+            log.warn("Admin not found for ID: {}", adminId);
+            return new UnauthorizedException("Admin not found");
+          });
       if (admin.getRole() != Role.SUPER_ADMIN) {
+        log.warn("Access denied for admin {}: Requires SUPER_ADMIN role to access {}", adminId, request.getRequestURI());
         throw new UnauthorizedException("Access denied: Requires Super Admin role");
       }
     }

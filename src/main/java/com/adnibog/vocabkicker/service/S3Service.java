@@ -14,7 +14,9 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class S3Service implements StorageService {
 
@@ -47,6 +49,7 @@ public class S3Service implements StorageService {
 
     PresignedPutObjectRequest presignedRequest = presigner.presignPutObject(presignRequest);
 
+    log.info("Generated presigned upload URL for project {} (key: {})", projectId, key);
     return new UploadUrlResponse(presignedRequest.url().toString(), key);
   }
 

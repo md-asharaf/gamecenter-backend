@@ -13,7 +13,9 @@ import com.adnibog.vocabkicker.repository.UserRepository;
 
 import java.util.Date;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class AuthService {
 
@@ -30,14 +32,17 @@ public class AuthService {
   public AuthResult login(String email, String password) {
     Optional<User> userOpt = userRepository.findByEmail(email);
     if (userOpt.isEmpty()) {
+      log.warn("Login failed: User not found for email {}", email);
       throw new UnauthorizedException("Invalid credentials");
     }
 
     User user = userOpt.get();
     if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+      log.warn("Login failed: Invalid password for email {}", email);
       throw new UnauthorizedException("Invalid credentials");
     }
 
+    log.info("User {} logged in successfully", email);
     return generateTokensAndSave(user);
   }
 
@@ -65,19 +70,23 @@ public class AuthService {
     Optional<User> userOpt = userRepository.findById(userId);
 
     if (userOpt.isEmpty()) {
+      log.warn("Token refresh failed: User {} not found", userId);
       throw new NotFoundException("User not found");
     }
 
     User user = userOpt.get();
     if (user.getRefreshTokenHash() == null
         || !passwordEncoder.matches(refreshToken, user.getRefreshTokenHash())) {
+      log.warn("Token refresh failed: Invalid refresh token hash for user {}", userId);
       throw new UnauthorizedException("Invalid refresh token");
     }
 
     if (user.getRefreshTokenExpiry() != null && user.getRefreshTokenExpiry() < System.currentTimeMillis()) {
+      log.warn("Token refresh failed: Refresh token expired in DB for user {}", userId);
       throw new UnauthorizedException("Refresh token expired in db");
     }
 
+    log.info("User {} refreshed tokens successfully", user.getEmail());
     return generateTokensAndSave(user);
   }
 

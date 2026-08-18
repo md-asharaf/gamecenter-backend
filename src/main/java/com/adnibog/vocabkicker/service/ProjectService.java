@@ -22,7 +22,9 @@ import java.util.stream.Collectors;
 
 import com.adnibog.vocabkicker.entity.Role;
 import com.adnibog.vocabkicker.exception.UnauthorizedException;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class ProjectService {
 
@@ -42,6 +44,7 @@ public class ProjectService {
         .orElseThrow(() -> new NotFoundException("Admin not found"));
 
     if (admin.getRole() != Role.SUPER_ADMIN) {
+      log.warn("Admin {} attempted to create a project but is not a SUPER_ADMIN", adminId);
       throw new UnauthorizedException("Only Super Admin can create a new project");
     }
 
@@ -70,6 +73,7 @@ public class ProjectService {
     admin.setUpdatedAt(now);
     userRepository.save(admin);
 
+    log.info("Project '{}' ({}) successfully created by Admin {}", project.getName(), id, adminId);
     return projectMapper.toDto(project);
   }
 
@@ -112,6 +116,7 @@ public class ProjectService {
           || req.getMainQuestionLabel().equals(req.getField2Label())) {
         project.setMainQuestionField("field2");
       } else {
+        log.warn("Update project {} failed: main question label '{}' does not match any existing fields", projectId, req.getMainQuestionLabel());
         throw new BadRequestException("The main question label must match either the first or second field label");
       }
     }
@@ -128,6 +133,7 @@ public class ProjectService {
     project.setUpdatedAt(System.currentTimeMillis());
     projectRepository.save(project);
 
+    log.info("Project '{}' ({}) successfully updated", project.getName(), project.getId());
     return projectMapper.toDto(project);
   }
 }

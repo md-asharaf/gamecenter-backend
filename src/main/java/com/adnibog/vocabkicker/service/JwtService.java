@@ -58,7 +58,7 @@ public class JwtService {
 
       return claims;
     } catch (Exception e) {
-      throw new UnauthorizedException("Unauthorized: " + e.getMessage());
+      throw new UnauthorizedException("Unauthorized: Invalid token");
     }
   }
 

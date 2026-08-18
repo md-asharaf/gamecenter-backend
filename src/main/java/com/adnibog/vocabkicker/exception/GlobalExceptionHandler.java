@@ -14,26 +14,33 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
   @ExceptionHandler(UnauthorizedException.class)
   public ResponseEntity<ApiError> handleUnauthorized(UnauthorizedException ex) {
+    log.warn("Unauthorized request: {}", ex.getMessage());
     return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
   }
 
   @ExceptionHandler(NotFoundException.class)
   public ResponseEntity<ApiError> handleNotFound(NotFoundException ex) {
+    log.warn("Resource not found: {}", ex.getMessage());
     return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
   }
 
   @ExceptionHandler(ConflictException.class)
   public ResponseEntity<ApiError> handleConflict(ConflictException ex) {
+    log.warn("Conflict error: {}", ex.getMessage());
     return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
   }
 
   @ExceptionHandler(BadRequestException.class)
   public ResponseEntity<ApiError> handleBadRequest(BadRequestException ex) {
+    log.warn("Bad request: {}", ex.getMessage());
     return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
   }
 
@@ -55,7 +62,8 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiError> handleGeneralException(Exception ex) {
-    return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    log.error("Unhandled internal server error occurred", ex);
+    return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An internal server error occurred");
   }
 
   private ResponseEntity<ApiError> buildErrorResponse(@NonNull HttpStatus status, String message) {

@@ -13,7 +13,9 @@ import org.springframework.lang.NonNull;
 
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 public class ProjectInterceptor implements HandlerInterceptor {
 
@@ -33,6 +35,7 @@ public class ProjectInterceptor implements HandlerInterceptor {
 
     String adminId = (String) request.getAttribute("adminId");
     if (adminId == null) {
+      log.warn("Admin authentication required but not found in request attributes");
       throw new UnauthorizedException("Admin authentication required");
     }
 
@@ -58,6 +61,7 @@ public class ProjectInterceptor implements HandlerInterceptor {
 
     Set<String> allowedProjects = admin.getProjectIds();
     if (allowedProjects == null || !allowedProjects.contains(projectId)) {
+      log.warn("Access denied: Admin {} attempted to access restricted project {}", adminId, projectId);
       throw new UnauthorizedException("Admin does not have access to this project");
     }
 

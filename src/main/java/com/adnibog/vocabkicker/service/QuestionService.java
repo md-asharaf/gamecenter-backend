@@ -24,7 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class QuestionService {
 
@@ -76,6 +78,8 @@ public class QuestionService {
     }
     q.setUpdatedAt(now);
     questionRepository.save(q);
+
+    log.info("Created question {} for project {}", q.getId(), projectId);
     return questionMapper.toDto(q, projects);
   }
 
@@ -106,8 +110,9 @@ public class QuestionService {
     q.setId(UUID.randomUUID().toString());
     q.setCreatedAt(now);
     q.setUpdatedAt(now);
-
     questionRepository.save(q);
+
+    log.info("Created question {} from request for project {}", q.getId(), projectId);
     return questionMapper.toDto(q, projects);
   }
 
@@ -139,6 +144,7 @@ public class QuestionService {
     existing.setUpdatedAt(System.currentTimeMillis());
     questionRepository.save(existing);
 
+    log.info("Updated question {} in project {}", id, projectId);
     return questionMapper.toDto(existing, projects);
   }
 
@@ -146,6 +152,7 @@ public class QuestionService {
     questionRepository.findById(projectId, id)
         .orElseThrow(() -> new NotFoundException("Question not found"));
     questionRepository.deleteById(projectId, id);
+    log.info("Deleted question {} in project {}", id, projectId);
   }
 
   public List<QuizQuestion> generateQuiz(String projectId) {
@@ -198,6 +205,8 @@ public class QuestionService {
 
       quiz.add(qq);
     }
+
+    log.info("Generated quiz of size {} for project {}", quiz.size(), projectId);
     return quiz;
   }
 }
