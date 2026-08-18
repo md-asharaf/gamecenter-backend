@@ -12,12 +12,19 @@ echo "Building Java application..."
 ./mvnw clean package -DskipTests
 
 JAR="target/serverless-0.0.1-SNAPSHOT-aws.jar"
-BUCKET_NAME="gamecenter-cf-deployments-774411"
+BUCKET_NAME="gamecenter-cf-deployments-2026"
 REGION="ap-south-1"
 STACK_NAME="gamecenter-serverless"
 
 # Compute S3 key from JAR hash so CloudFormation always picks up a fresh upload
 S3_KEY=$(md5sum "$JAR" | cut -d' ' -f1)
+
+# Ensure the deployment bucket exists
+if ! aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+    echo "Bucket $BUCKET_NAME does not exist or is not accessible. Creating it..."
+    aws s3 mb "s3://$BUCKET_NAME" --region "$REGION"
+fi
+
 echo "Uploading JAR ($(du -sh "$JAR" | cut -f1)) to s3://$BUCKET_NAME/$S3_KEY ..."
 aws s3 cp "$JAR" "s3://$BUCKET_NAME/$S3_KEY" --region "$REGION"
 

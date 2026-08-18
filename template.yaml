@@ -9,12 +9,12 @@ Parameters:
     NoEcho: true
   CorsAllowOrigins:
     Type: String
-    Description: "Allowed origins for CORS (comma separated, e.g. https://gamecenter.vercel.app,http://localhost:3000)"
+    Description: "Allowed origins for CORS (comma separated, e.g. http://localhost:3000)"
     Default: "http://localhost:3000"
   ImportBucketName:
     Type: String
     Description: "Specific name for the S3 bucket to import files (must be globally unique)"
-    Default: "gamecenter-import-bucket"
+    Default: "gamecenter-import-bucket-2026"
 
 Globals:
   Function:
