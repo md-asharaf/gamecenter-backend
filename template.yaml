@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: VocabKicker Serverless Backend with Spring Cloud Function
+
+Parameters:
+  JwtSecret:
+    Type: String
+    Description: "Secret key for JWT generation (must be at least 32 characters)"
+    NoEcho: true
+  CorsAllowOrigin:
+    Type: String
+    Description: "Allowed origin for CORS (e.g. http://localhost:8000)"
+    Default: "http://localhost:8000"
+  ImportBucketName:
+    Type: String
+    Description: "Specific name for the S3 bucket to import files (must be globally unique)"
+    Default: "vocabkicker-import-bucket"
+
+Globals:
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      AllowHeaders: "'Content-Type,Authorization,Cookie'"
+      AllowOrigin: !Sub "'${CorsAllowOrigin}'"
+      AllowCredentials: true
+  Function:
+    Timeout: 30
+    MemorySize: 1024
+    Runtime: java17
+    CodeUri: target/serverless-0.0.1-SNAPSHOT-aws.jar
+    SnapStart:
+      ApplyOn: PublishedVersions
+    Environment:
+      Variables:
+        JAVA_TOOL_OPTIONS: "-XX:TieredStopAtLevel=1"
+        JWT_SECRET: !Ref JwtSecret
+        MAIN_CLASS: com.vocabkicker.serverless.VocabKickerServerlessApplication
+        CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+        IMPORT_BUCKET_NAME: !Ref ImportBucketName
+
+Resources:
+  QuestionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Questions
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Users
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  QuestionsImportBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref ImportBucketName
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - PUT
+              - GET
+            AllowedOrigins:
+              - !Ref CorsAllowOrigin
+              - "http://localhost:3000"
+            MaxAge: 3000
+
+  ApiMonolithFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: com.vocabkicker.serverless.handlers.StreamLambdaHandler::handleRequest
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref QuestionsTable
+        - S3CrudPolicy:
+            BucketName: !Ref ImportBucketName
+      Events:
+        CatchAll:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+
+  BatchCreateQuestionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 120
+      MemorySize: 1024
+      Handler: com.vocabkicker.serverless.handlers.S3BatchRequestHandler::handleRequest
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref ImportBucketName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref QuestionsTable
+      Events:
+        FileUpload:
+          Type: S3
+          Properties:
+            Bucket: !Ref QuestionsImportBucket
+            Events: s3:ObjectCreated:*
+
+Outputs:
+  ApiUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
