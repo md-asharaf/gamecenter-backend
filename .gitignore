@@ -34,3 +34,6 @@ build/
 
 packaged.yaml
 .env
+
+# Seed/dev-only scripts - never commit to production
+src/main/java/**/scripts/
