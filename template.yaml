@@ -102,10 +102,17 @@ Resources:
             BucketName: !Ref ImportBucketName
       Events:
         CatchAll:
-          Type: Api
+          Type: HttpApi
           Properties:
             Path: /{proxy+}
             Method: ANY
+            PayloadFormatVersion: "1.0"
+        Root:
+          Type: HttpApi
+          Properties:
+            Path: /
+            Method: ANY
+            PayloadFormatVersion: "1.0"
 
   BatchCreateQuestionsFunction:
     Type: AWS::Serverless::Function
@@ -128,4 +135,4 @@ Resources:
 Outputs:
   ApiUrl:
     Description: "API Gateway endpoint URL"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/"

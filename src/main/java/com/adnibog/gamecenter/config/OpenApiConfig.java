@@ -16,9 +16,9 @@ public class OpenApiConfig {
     final String securitySchemeName = "bearerAuth";
     return new OpenAPI()
         .info(new Info()
-            .title("Vocabulary Kicker API")
+            .title("Game Center API")
             .version("1.0")
-            .description("API Documentation for Vocabulary Kicker Backend"))
+            .description("API Documentation for Game Center Backend"))
         .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
         .components(
             new Components()
