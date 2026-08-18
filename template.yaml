@@ -34,9 +34,9 @@ Globals:
       Variables:
         JAVA_TOOL_OPTIONS: "-XX:TieredStopAtLevel=1"
         JWT_SECRET: !Ref JwtSecret
-        MAIN_CLASS: com.vocabkicker.serverless.VocabKickerServerlessApplication
-        CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
-        IMPORT_BUCKET_NAME: !Ref ImportBucketName
+        MAIN_CLASS: com.adnibog.vocabkicker.VocabKickerServerlessApplication
+        CORS_ALLOWED_ORIGIN: !Ref CorsAllowOrigin
+        AWS_S3_IMPORT_BUCKET_NAME: !Ref ImportBucketName
 
 Resources:
   QuestionsTable:
@@ -82,7 +82,7 @@ Resources:
   ApiMonolithFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: com.vocabkicker.serverless.handlers.StreamLambdaHandler::handleRequest
+      Handler: com.adnibog.vocabkicker.handlers.StreamLambdaHandler::handleRequest
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable
@@ -102,7 +102,7 @@ Resources:
     Properties:
       Timeout: 120
       MemorySize: 1024
-      Handler: com.vocabkicker.serverless.handlers.S3BatchRequestHandler::handleRequest
+      Handler: com.adnibog.vocabkicker.handlers.S3BatchRequestHandler::handleRequest
       Policies:
         - S3ReadPolicy:
             BucketName: !Ref ImportBucketName

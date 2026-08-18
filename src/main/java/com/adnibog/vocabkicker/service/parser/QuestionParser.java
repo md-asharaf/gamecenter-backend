@@ -1,0 +1,12 @@
+package com.adnibog.vocabkicker.service.parser;
+
+import java.io.InputStream;
+import java.util.List;
+
+import com.adnibog.vocabkicker.entity.Question;
+
+public interface QuestionParser {
+  boolean supports(String filename);
+
+  List<Question> parse(InputStream inputStream) throws Exception;
+}

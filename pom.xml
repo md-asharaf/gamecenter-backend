@@ -8,7 +8,7 @@
 		<version>3.2.3</version>
 		<relativePath/>
 	</parent>
-	<groupId>com.vocabkicker</groupId>
+	<groupId>com.adnibog.vocabkicker</groupId>
 	<artifactId>serverless</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>serverless</name>
@@ -28,6 +28,10 @@
 					<artifactId>spring-boot-starter-tomcat</artifactId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.amazonaws.serverless</groupId>
