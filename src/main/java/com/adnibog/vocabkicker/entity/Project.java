@@ -13,7 +13,8 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 @Builder
 @DynamoDbBean
 public class Project {
-  private String projectId;
+  private String id;
+  private String name;
   private Integer numberOfQuestionsInQuiz;
   private String mainQuestionField;
   private String field1Label;
@@ -23,7 +24,7 @@ public class Project {
   private Long updatedAt;
 
   @DynamoDbPartitionKey
-  public String getProjectId() {
-    return projectId;
+  public String getId() {
+    return id;
   }
 }

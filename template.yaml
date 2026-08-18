@@ -72,10 +72,10 @@ Resources:
     Properties:
       TableName: Projects
       AttributeDefinitions:
-        - AttributeName: projectId
+        - AttributeName: id
           AttributeType: S
       KeySchema:
-        - AttributeName: projectId
+        - AttributeName: id
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
 

@@ -1,6 +1,7 @@
 package com.adnibog.vocabkicker.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import com.adnibog.vocabkicker.dto.request.CreateQuestionRequest;
@@ -8,9 +9,7 @@ import com.adnibog.vocabkicker.dto.request.UpdateQuestionRequest;
 import com.adnibog.vocabkicker.dto.response.ApiResponse;
 import com.adnibog.vocabkicker.dto.response.QuestionDto;
 import com.adnibog.vocabkicker.dto.response.QuestionPageResponse;
-import com.adnibog.vocabkicker.dto.response.UploadUrlResponse;
 import com.adnibog.vocabkicker.service.QuestionService;
-import com.adnibog.vocabkicker.service.StorageService;
 
 import jakarta.validation.Valid;
 
@@ -19,11 +18,9 @@ import jakarta.validation.Valid;
 public class QuestionController {
 
   private final QuestionService questionService;
-  private final StorageService storageService;
 
-  public QuestionController(QuestionService questionService, StorageService storageService) {
+  public QuestionController(QuestionService questionService) {
     this.questionService = questionService;
-    this.storageService = storageService;
   }
 
   @GetMapping
@@ -41,16 +38,8 @@ public class QuestionController {
       @PathVariable String projectId,
       @Valid @RequestBody CreateQuestionRequest req) {
     QuestionDto created = questionService.createQuestionFromRequest(projectId, req);
-    return ResponseEntity.ok(ApiResponse.success(created));
-  }
-
-  @PostMapping("/uploads/presigned-url")
-  public ResponseEntity<ApiResponse<UploadUrlResponse>> generateUploadUrl(
-      @PathVariable String projectId,
-      @RequestParam(required = false) String ext) {
-
-    UploadUrlResponse s3Info = storageService.generateUploadUrl(projectId, ext);
-    return ResponseEntity.ok(ApiResponse.success(s3Info));
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(ApiResponse.success(created, "Question created successfully"));
   }
 
   @GetMapping("/{id}")
@@ -65,7 +54,7 @@ public class QuestionController {
       @PathVariable String id,
       @Valid @RequestBody UpdateQuestionRequest req) {
     QuestionDto updated = questionService.updateQuestion(projectId, id, req);
-    return ResponseEntity.ok(ApiResponse.success(updated));
+    return ResponseEntity.ok(ApiResponse.success(updated, "Question updated successfully"));
   }
 
   @DeleteMapping("/{id}")

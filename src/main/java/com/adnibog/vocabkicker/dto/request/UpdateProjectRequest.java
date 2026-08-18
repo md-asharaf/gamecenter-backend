@@ -7,8 +7,10 @@ import lombok.Data;
 @Data
 public class UpdateProjectRequest {
 
-  @Min(value = 1, message = "numberOfQuestionsInQuiz must be at least 1")
-  @Max(value = 100, message = "numberOfQuestionsInQuiz must be at most 100")
+  private String name;
+
+  @Min(value = 1, message = "The number of questions in a quiz must be at least 1")
+  @Max(value = 100, message = "The number of questions in a quiz must be at most 100")
   private Integer numberOfQuestionsInQuiz;
 
   private String mainQuestionLabel;

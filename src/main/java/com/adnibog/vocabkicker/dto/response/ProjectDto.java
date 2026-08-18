@@ -11,7 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ProjectDto {
-  private String projectId;
+  private String id;
+  private String name;
   private Integer numberOfQuestionsInQuiz;
   @JsonIgnore
   private String mainQuestionField;

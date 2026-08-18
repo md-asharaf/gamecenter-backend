@@ -7,6 +7,7 @@ import com.adnibog.vocabkicker.dto.request.UpdateProjectRequest;
 import com.adnibog.vocabkicker.dto.response.ProjectDto;
 import com.adnibog.vocabkicker.entity.Project;
 import com.adnibog.vocabkicker.entity.User;
+import com.adnibog.vocabkicker.exception.BadRequestException;
 import com.adnibog.vocabkicker.exception.NotFoundException;
 import com.adnibog.vocabkicker.mapper.ProjectMapper;
 import com.adnibog.vocabkicker.repository.ProjectRepository;
@@ -41,22 +42,22 @@ public class ProjectService {
         .orElseThrow(() -> new NotFoundException("Admin not found"));
 
     if (admin.getRole() != Role.SUPER_ADMIN) {
-      throw new UnauthorizedException("Only SUPER_ADMIN can create a new project");
+      throw new UnauthorizedException("Only Super Admin can create a new project");
     }
 
-    String projectId = UUID.randomUUID().toString();
+    String id = UUID.randomUUID().toString();
     long now = System.currentTimeMillis();
 
-    Project project = Project.builder()
-        .projectId(projectId)
-        .numberOfQuestionsInQuiz(10)
-        .mainQuestionField("field1")
-        .field1Label(req != null && req.getField1Label() != null ? req.getField1Label() : "Field 1")
-        .field2Label(req != null && req.getField2Label() != null ? req.getField2Label() : "Field 2")
-        .field3Label(req != null && req.getField3Label() != null ? req.getField3Label() : "Field 3")
-        .createdAt(now)
-        .updatedAt(now)
-        .build();
+    Project project = new Project();
+    project.setId(id);
+    project.setName(req != null ? req.getName() : null);
+    project.setField1Label(req != null && req.getField1Label() != null ? req.getField1Label() : "Field 1");
+    project.setNumberOfQuestionsInQuiz(10);
+    project.setMainQuestionField("field1");
+    project.setField2Label(req != null && req.getField2Label() != null ? req.getField2Label() : "Field 2");
+    project.setField3Label(req != null && req.getField3Label() != null ? req.getField3Label() : "Field 3");
+    project.setCreatedAt(now);
+    project.setUpdatedAt(now);
 
     projectRepository.save(project);
 
@@ -64,7 +65,7 @@ public class ProjectService {
     if (projectIds == null) {
       projectIds = new HashSet<>();
     }
-    projectIds.add(projectId);
+    projectIds.add(id);
     admin.setProjectIds(projectIds);
     admin.setUpdatedAt(now);
     userRepository.save(admin);
@@ -93,12 +94,15 @@ public class ProjectService {
         .collect(Collectors.toList());
   }
 
-  public ProjectDto updateProjectProjects(String projectId, UpdateProjectRequest req) {
+  public ProjectDto updateProject(String projectId, UpdateProjectRequest req) {
     Project project = projectRepository.findByProjectId(projectId)
-        .orElseThrow(() -> new NotFoundException("Project projects not found"));
+        .orElseThrow(() -> new NotFoundException("Project not found"));
 
     if (req.getNumberOfQuestionsInQuiz() != null) {
       project.setNumberOfQuestionsInQuiz(req.getNumberOfQuestionsInQuiz());
+    }
+    if (req.getName() != null) {
+      project.setName(req.getName());
     }
     if (req.getMainQuestionLabel() != null) {
       if (req.getMainQuestionLabel().equals(project.getField1Label())
@@ -108,7 +112,7 @@ public class ProjectService {
           || req.getMainQuestionLabel().equals(req.getField2Label())) {
         project.setMainQuestionField("field2");
       } else {
-        throw new IllegalArgumentException("mainQuestionLabel must match either field1Label or field2Label");
+        throw new BadRequestException("The main question label must match either the first or second field label");
       }
     }
     if (req.getField1Label() != null) {

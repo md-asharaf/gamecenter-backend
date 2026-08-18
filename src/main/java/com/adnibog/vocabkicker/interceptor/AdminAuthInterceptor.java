@@ -42,7 +42,7 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
       User admin = userRepository.findById(adminId)
           .orElseThrow(() -> new UnauthorizedException("Admin not found"));
       if (admin.getRole() != Role.SUPER_ADMIN) {
-        throw new UnauthorizedException("Access denied: Requires SUPER_ADMIN role");
+        throw new UnauthorizedException("Access denied: Requires Super Admin role");
       }
     }
 

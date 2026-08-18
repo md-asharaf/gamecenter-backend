@@ -10,6 +10,7 @@ import com.adnibog.vocabkicker.dto.response.QuizQuestion;
 import com.adnibog.vocabkicker.dto.response.ProjectDto;
 import com.adnibog.vocabkicker.entity.Question;
 import com.adnibog.vocabkicker.entity.Project;
+import com.adnibog.vocabkicker.exception.BadRequestException;
 import com.adnibog.vocabkicker.exception.NotFoundException;
 import com.adnibog.vocabkicker.mapper.QuestionMapper;
 import com.adnibog.vocabkicker.mapper.ProjectMapper;
@@ -42,7 +43,7 @@ public class QuestionService {
 
   private ProjectDto getProjects(String projectId) {
     Project project = projectRepository.findByProjectId(projectId)
-        .orElseThrow(() -> new NotFoundException("Project projects not found"));
+        .orElseThrow(() -> new NotFoundException("Project not found"));
     return projectMapper.toDto(project);
   }
 
@@ -87,10 +88,12 @@ public class QuestionService {
     String field3 = dynamicFields.get(projects.getField3Label());
 
     if (field1 == null || field1.trim().isEmpty()) {
-      throw new IllegalArgumentException(projects.getField1Label() + " cannot be blank");
+      throw new BadRequestException("The primary question field cannot be empty");
     }
-    if (field2 == null || field2.trim().isEmpty()) {
-      throw new IllegalArgumentException(projects.getField2Label() + " cannot be blank");
+
+    if (projects.getField2Label() != null && !projects.getField2Label().isEmpty() &&
+        (field2 == null || field2.trim().isEmpty())) {
+      throw new BadRequestException("The secondary question field cannot be empty");
     }
 
     Question q = new Question();
@@ -130,7 +133,7 @@ public class QuestionService {
     }
 
     if (!updated) {
-      throw new IllegalArgumentException("At least one valid field must be provided to update");
+      throw new BadRequestException("Please provide at least one valid field to update");
     }
 
     existing.setUpdatedAt(System.currentTimeMillis());
@@ -147,7 +150,7 @@ public class QuestionService {
 
   public List<QuizQuestion> generateQuiz(String projectId) {
     Project project = projectRepository.findByProjectId(projectId)
-        .orElseThrow(() -> new NotFoundException("Project projects not found"));
+        .orElseThrow(() -> new NotFoundException("Project not found"));
     ProjectDto projectDto = projectMapper.toDto(project);
 
     int numberOfQuestions = project.getNumberOfQuestionsInQuiz() != null ? project.getNumberOfQuestionsInQuiz() : 10;
@@ -156,7 +159,7 @@ public class QuestionService {
     List<Question> allQuestions = new ArrayList<>(questionRepository.findAll(projectId));
 
     if (allQuestions.size() < numberOfQuestions) {
-      throw new RuntimeException("Not enough questions in database to form a quiz.");
+      throw new BadRequestException("Not enough questions in database to form a quiz");
     }
 
     Collections.shuffle(allQuestions);
@@ -187,6 +190,7 @@ public class QuestionService {
       Collections.shuffle(options);
       QuizQuestion qq = new QuizQuestion();
       qq.setAnswer("field2".equalsIgnoreCase(mainField) ? q.getField2() : q.getField1());
+      qq.setField1(q.getField1());
       qq.setField2(q.getField2());
       qq.setField3(q.getField3());
       qq.setOptions(options);
@@ -194,7 +198,6 @@ public class QuestionService {
 
       quiz.add(qq);
     }
-
     return quiz;
   }
 }

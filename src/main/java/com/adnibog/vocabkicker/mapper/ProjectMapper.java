@@ -12,7 +12,8 @@ public class ProjectMapper {
       return null;
     }
     return ProjectDto.builder()
-        .projectId(project.getProjectId())
+        .id(project.getId())
+        .name(project.getName())
         .numberOfQuestionsInQuiz(project.getNumberOfQuestionsInQuiz())
         .mainQuestionField(project.getMainQuestionField())
         .field1Label(project.getField1Label())

@@ -77,7 +77,7 @@ public class UserService {
 
   public void createAdmin(String email, String password, Set<String> projectIds) {
     if (userRepository.findByEmail(email).isPresent()) {
-      throw new ConflictException("An admin user with this email already exists.");
+      throw new ConflictException("An admin user with this email already exists");
     }
 
     final long now = System.currentTimeMillis();
