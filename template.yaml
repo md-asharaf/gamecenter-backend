@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: VocabKicker Serverless Backend with Spring Cloud Function
+Description: GameCenter Serverless Backend with Spring Cloud Function
 
 Parameters:
   JwtSecret:
@@ -14,7 +14,7 @@ Parameters:
   ImportBucketName:
     Type: String
     Description: "Specific name for the S3 bucket to import files (must be globally unique)"
-    Default: "vocabkicker-import-bucket"
+    Default: "gamecenter-import-bucket"
 
 Globals:
   Api:
@@ -34,7 +34,7 @@ Globals:
       Variables:
         JAVA_TOOL_OPTIONS: "-XX:TieredStopAtLevel=1"
         JWT_SECRET: !Ref JwtSecret
-        MAIN_CLASS: com.adnibog.vocabkicker.VocabKickerApplication
+        MAIN_CLASS: com.adnibog.gamecenter.GameCenterApplication
         CORS_ALLOWED_ORIGIN: !Ref CorsAllowOrigin
         AWS_S3_IMPORT_BUCKET_NAME: !Ref ImportBucketName
 
@@ -98,7 +98,7 @@ Resources:
   ApiMonolithFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: com.adnibog.vocabkicker.handlers.StreamLambdaHandler::handleRequest
+      Handler: com.adnibog.gamecenter.handlers.StreamLambdaHandler::handleRequest
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable
@@ -120,7 +120,7 @@ Resources:
     Properties:
       Timeout: 120
       MemorySize: 1024
-      Handler: com.adnibog.vocabkicker.handlers.S3BatchRequestHandler::handleRequest
+      Handler: com.adnibog.gamecenter.handlers.S3BatchRequestHandler::handleRequest
       Policies:
         - S3ReadPolicy:
             BucketName: !Ref ImportBucketName

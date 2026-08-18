@@ -8,7 +8,7 @@
 		<version>3.2.3</version>
 		<relativePath/>
 	</parent>
-	<groupId>com.adnibog.vocabkicker</groupId>
+	<groupId>com.adnibog.gamecenter</groupId>
 	<artifactId>serverless</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>serverless</name>

@@ -1,0 +1,71 @@
+package com.adnibog.gamecenter.interceptor;
+
+import com.adnibog.gamecenter.entity.User;
+import com.adnibog.gamecenter.entity.Role;
+import com.adnibog.gamecenter.exception.ForbiddenException;
+import com.adnibog.gamecenter.exception.UnauthorizedException;
+import com.adnibog.gamecenter.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.lang.NonNull;
+
+import java.util.Map;
+import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Component
+public class ProjectInterceptor implements HandlerInterceptor {
+
+  private final UserRepository userRepository;
+
+  public ProjectInterceptor(UserRepository userRepository) {
+    this.userRepository = userRepository;
+  }
+
+  @Override
+  public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+      @NonNull Object handler) throws Exception {
+
+    if (request.getMethod().equals("OPTIONS")) {
+      return true;
+    }
+
+    String adminId = (String) request.getAttribute("adminId");
+    if (adminId == null) {
+      log.warn("Admin authentication required but not found in request attributes");
+      throw new UnauthorizedException("Admin authentication required");
+    }
+
+    Object attribute = request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
+    if (!(attribute instanceof Map<?, ?>)) {
+      return true;
+    }
+
+    Map<?, ?> pathVariables = (Map<?, ?>) attribute;
+    Object projectIdObj = pathVariables.get("projectId");
+    if (!(projectIdObj instanceof String)) {
+      return true;
+    }
+
+    String projectId = (String) projectIdObj;
+
+    User admin = userRepository.findById(adminId)
+        .orElseThrow(() -> new UnauthorizedException("Admin not found"));
+
+    if (admin.getRole() == Role.SUPER_ADMIN) {
+      return true;
+    }
+
+    Set<String> allowedProjects = admin.getProjectIds();
+    if (allowedProjects == null || !allowedProjects.contains(projectId)) {
+      log.warn("Access denied: Admin {} attempted to access restricted project {}", adminId, projectId);
+      throw new ForbiddenException("Admin does not have access to this project");
+    }
+
+    return true;
+  }
+}

@@ -12,9 +12,9 @@ echo "Building Java application..."
 ./mvnw clean package -DskipTests
 
 JAR="target/serverless-0.0.1-SNAPSHOT-aws.jar"
-BUCKET_NAME="vocabkicker-cf-deployments-774411"
+BUCKET_NAME="gamecenter-cf-deployments-774411"
 REGION="ap-south-1"
-STACK_NAME="vocabkicker-serverless"
+STACK_NAME="gamecenter-serverless"
 
 # Compute S3 key from JAR hash so CloudFormation always picks up a fresh upload
 S3_KEY=$(md5sum "$JAR" | cut -d' ' -f1)
