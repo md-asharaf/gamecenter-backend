@@ -1,5 +1,9 @@
 package com.adnibog.gamecenter.config;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -16,7 +20,7 @@ public class WebConfig implements WebMvcConfigurer {
 
   @NonNull
   private final AdminAuthInterceptor adminAuthInterceptor;
-  private final String allowedOrigin;
+  private final String[] allowedOrigins;
 
   @NonNull
   private final ProjectInterceptor projectInterceptor;
@@ -24,16 +28,21 @@ public class WebConfig implements WebMvcConfigurer {
   public WebConfig(
       @NonNull AdminAuthInterceptor adminAuthInterceptor,
       @NonNull ProjectInterceptor projectInterceptor,
-      @Value("${cors.allowed-origin}") String allowedOrigin) {
+      @Value("${cors.allowed-origins}") String[] allowedOrigins) {
     this.adminAuthInterceptor = adminAuthInterceptor;
     this.projectInterceptor = projectInterceptor;
-    this.allowedOrigin = allowedOrigin;
+    this.allowedOrigins = allowedOrigins;
   }
 
   @Override
   public void addCorsMappings(@NonNull CorsRegistry registry) {
+    List<String> origins = new ArrayList<>(Arrays.asList(allowedOrigins));
+    if (!origins.contains("http://localhost:3000")) {
+      origins.add("http://localhost:3000");
+    }
+
     registry.addMapping("/**")
-        .allowedOrigins(allowedOrigin, "http://localhost:3000")
+        .allowedOrigins(java.util.Objects.requireNonNull(origins.toArray(new String[0])))
         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
         .allowedHeaders("Content-Type", "Authorization", "Cookie")
         .allowCredentials(true)

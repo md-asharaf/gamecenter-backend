@@ -30,7 +30,7 @@ aws cloudformation deploy \
   --stack-name "$STACK_NAME" \
   --capabilities CAPABILITY_IAM \
   --parameter-overrides JwtSecret="$JWT_SECRET" \
-  CorsAllowOrigin="$CORS_ALLOWED_ORIGIN" \
+  CorsAllowOrigins="$CORS_ALLOWED_ORIGINS" \
   ImportBucketName="$AWS_S3_IMPORT_BUCKET_NAME"
 
 
