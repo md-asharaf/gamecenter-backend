@@ -38,11 +38,6 @@ public class DynamoDbUserRepository implements UserRepository {
   }
 
   @Override
-  public long count() {
-    return userTable.scan().items().stream().count();
-  }
-
-  @Override
   public java.util.List<User> findAll() {
     return new java.util.ArrayList<>(userTable.scan().items().stream().toList());
   }

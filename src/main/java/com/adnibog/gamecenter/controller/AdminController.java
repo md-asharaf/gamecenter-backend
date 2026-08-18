@@ -31,6 +31,15 @@ public class AdminController {
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null, "Admin created successfully"));
   }
 
+  @GetMapping("/me")
+  public ResponseEntity<ApiResponse<UserDto>> getMe(@RequestAttribute("adminId") String currentAdminId) {
+    UserDto me = userService.getAllAdmins().stream()
+        .filter(admin -> admin.getId().equals(currentAdminId))
+        .findFirst()
+        .orElseThrow(() -> new RuntimeException("Admin not found"));
+    return ResponseEntity.ok(ApiResponse.success(me));
+  }
+
   @GetMapping
   public ResponseEntity<ApiResponse<List<UserDto>>> listAdmins(@RequestAttribute("adminId") String currentAdminId) {
     List<UserDto> admins = userService.getAllAdmins().stream()

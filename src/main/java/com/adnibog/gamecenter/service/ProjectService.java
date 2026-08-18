@@ -8,9 +8,11 @@ import com.adnibog.gamecenter.dto.response.ProjectDto;
 import com.adnibog.gamecenter.entity.Project;
 import com.adnibog.gamecenter.entity.User;
 import com.adnibog.gamecenter.exception.BadRequestException;
+import com.adnibog.gamecenter.exception.ConflictException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.ProjectMapper;
 import com.adnibog.gamecenter.repository.ProjectRepository;
+import com.adnibog.gamecenter.repository.QuestionRepository;
 import com.adnibog.gamecenter.repository.UserRepository;
 
 import java.util.ArrayList;
@@ -29,12 +31,14 @@ import lombok.extern.slf4j.Slf4j;
 public class ProjectService {
 
   private final ProjectRepository projectRepository;
+  private final QuestionRepository questionRepository;
   private final UserRepository userRepository;
   private final ProjectMapper projectMapper;
 
-  public ProjectService(ProjectRepository projectRepository, UserRepository userRepository,
-      ProjectMapper projectMapper) {
+  public ProjectService(ProjectRepository projectRepository, QuestionRepository questionRepository,
+      UserRepository userRepository, ProjectMapper projectMapper) {
     this.projectRepository = projectRepository;
+    this.questionRepository = questionRepository;
     this.userRepository = userRepository;
     this.projectMapper = projectMapper;
   }
@@ -46,6 +50,10 @@ public class ProjectService {
     if (admin.getRole() != Role.SUPER_ADMIN) {
       log.warn("Admin {} attempted to create a project but is not a SUPER_ADMIN", adminId);
       throw new ForbiddenException("Only Super Admin can create a new project");
+    }
+
+    if (req != null && req.getName() != null && projectRepository.findByName(req.getName()).isPresent()) {
+      throw new ConflictException("A project with this name already exists");
     }
 
     String id = UUID.randomUUID().toString();
@@ -106,6 +114,13 @@ public class ProjectService {
       project.setNumberOfQuestionsInQuiz(req.getNumberOfQuestionsInQuiz());
     }
     if (req.getName() != null) {
+      if (!req.getName().equals(project.getName())) {
+        projectRepository.findByName(req.getName())
+            .filter(other -> !other.getId().equals(project.getId()))
+            .ifPresent(other -> {
+              throw new ConflictException("A project with this name already exists");
+            });
+      }
       project.setName(req.getName());
     }
     if (req.getMainQuestionLabel() != null) {
@@ -136,5 +151,35 @@ public class ProjectService {
 
     log.info("Project '{}' ({}) successfully updated", project.getName(), project.getId());
     return projectMapper.toDto(project);
+  }
+
+  public void deleteProject(String adminId, String projectId) {
+    User admin = userRepository.findById(adminId)
+        .orElseThrow(() -> new NotFoundException("Admin not found"));
+
+    if (admin.getRole() != Role.SUPER_ADMIN) {
+      log.warn("Admin {} attempted to delete project {} but is not a SUPER_ADMIN", adminId, projectId);
+      throw new ForbiddenException("Only Super Admin can delete a project");
+    }
+
+    projectRepository.findByProjectId(projectId)
+        .orElseThrow(() -> new NotFoundException("Project not found"));
+
+    questionRepository.deleteAllByProjectId(projectId);
+    projectRepository.deleteByProjectId(projectId);
+    removeProjectFromAdmins(projectId);
+
+    log.info("Project {} successfully deleted by Admin {}", projectId, adminId);
+  }
+
+  private void removeProjectFromAdmins(String projectId) {
+    userRepository.findAll().forEach(user -> {
+      Set<String> projectIds = user.getProjectIds();
+      if (projectIds != null && projectIds.remove(projectId)) {
+        user.setProjectIds(projectIds);
+        user.setUpdatedAt(System.currentTimeMillis());
+        userRepository.save(user);
+      }
+    });
   }
 }

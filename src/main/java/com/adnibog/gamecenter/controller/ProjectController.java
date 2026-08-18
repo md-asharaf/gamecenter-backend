@@ -2,6 +2,7 @@ package com.adnibog.gamecenter.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -61,5 +62,13 @@ public class ProjectController {
       @Valid @RequestBody UpdateProjectRequest req) {
     ProjectDto updated = projectService.updateProject(id, req);
     return ResponseEntity.ok(ApiResponse.success(updated, "Project updated successfully"));
+  }
+
+  @Operation(summary = "Delete Project", description = "Deletes a project and its questions. Requires SUPER_ADMIN role.")
+  @DeleteMapping("/{id}")
+  public ResponseEntity<ApiResponse<Void>> deleteProject(HttpServletRequest request, @PathVariable String id) {
+    String adminId = (String) request.getAttribute("adminId");
+    projectService.deleteProject(adminId, id);
+    return ResponseEntity.ok(ApiResponse.success(null, "Project deleted successfully"));
   }
 }

@@ -28,6 +28,13 @@ public class DynamoDbProjectRepository implements ProjectRepository {
   }
 
   @Override
+  public Optional<Project> findByName(String name) {
+    return projectTable.scan().items().stream()
+        .filter(u -> u.getName().equalsIgnoreCase(name))
+        .findFirst();
+  }
+
+  @Override
   public void save(Project project) {
     projectTable.putItem(project);
   }

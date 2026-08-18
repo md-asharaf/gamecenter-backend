@@ -17,15 +17,7 @@ public class QuestionPage {
     return items;
   }
 
-  public void setItems(List<Question> items) {
-    this.items = items;
-  }
-
   public String getLastEvaluatedKey() {
     return lastEvaluatedKey;
-  }
-
-  public void setLastEvaluatedKey(String lastEvaluatedKey) {
-    this.lastEvaluatedKey = lastEvaluatedKey;
   }
 }

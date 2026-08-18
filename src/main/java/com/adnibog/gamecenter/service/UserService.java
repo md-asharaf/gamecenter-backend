@@ -30,10 +30,6 @@ public class UserService {
     this.userMapper = userMapper;
   }
 
-  public long getAdminCount() {
-    return userRepository.count();
-  }
-
   public List<UserDto> getAllAdmins() {
     return userRepository.findAll().stream().map(userMapper::toDto).collect(Collectors.toList());
   }

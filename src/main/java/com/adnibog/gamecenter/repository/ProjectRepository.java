@@ -8,6 +8,8 @@ import com.adnibog.gamecenter.entity.Project;
 public interface ProjectRepository {
   Optional<Project> findByProjectId(String projectId);
 
+  Optional<Project> findByName(String name);
+
   void save(Project project);
 
   void deleteByProjectId(String projectId);

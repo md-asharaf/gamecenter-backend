@@ -2,6 +2,7 @@ package com.adnibog.gamecenter.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -91,5 +92,14 @@ class ProjectControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data[0].id").value("proj_123"))
         .andExpect(jsonPath("$.data[0].name").value("Test Project"));
+  }
+
+  @Test
+  void deleteProject_Success() throws Exception {
+    mockMvc.perform(delete("/projects/proj_123")
+        .requestAttr("adminId", "admin_123"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true))
+        .andExpect(jsonPath("$.message").value("Project deleted successfully"));
   }
 }

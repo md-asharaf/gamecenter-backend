@@ -28,7 +28,7 @@ public class JwtService {
     this.cachedSecretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
   }
 
-  public SecretKey getSecretKey() {
+  private SecretKey getSecretKey() {
     return cachedSecretKey;
   }
 

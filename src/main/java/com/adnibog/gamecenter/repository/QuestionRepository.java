@@ -12,6 +12,8 @@ public interface QuestionRepository {
 
   void deleteById(String projectId, String id);
 
+  void deleteAllByProjectId(String projectId);
+
   QuestionPage findQuestions(String projectId, int limit, String lastEvaluatedKeyId, String searchKeyword);
 
   List<Question> findAll(String projectId);

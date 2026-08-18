@@ -46,6 +46,12 @@ public class DynamoDbQuestionRepository implements QuestionRepository {
   }
 
   @Override
+  public void deleteAllByProjectId(String projectId) {
+    QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(projectId).build());
+    questionTable.query(conditional).items().forEach(q -> deleteById(projectId, q.getId()));
+  }
+
+  @Override
   public List<Question> findAll(String projectId) {
     QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(projectId).build());
     return questionTable.query(conditional).items().stream().toList();
