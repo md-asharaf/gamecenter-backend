@@ -2,6 +2,7 @@ package com.adnibog.vocabkicker.interceptor;
 
 import com.adnibog.vocabkicker.entity.User;
 import com.adnibog.vocabkicker.entity.Role;
+import com.adnibog.vocabkicker.exception.ForbiddenException;
 import com.adnibog.vocabkicker.exception.UnauthorizedException;
 import com.adnibog.vocabkicker.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -62,7 +63,7 @@ public class ProjectInterceptor implements HandlerInterceptor {
     Set<String> allowedProjects = admin.getProjectIds();
     if (allowedProjects == null || !allowedProjects.contains(projectId)) {
       log.warn("Access denied: Admin {} attempted to access restricted project {}", adminId, projectId);
-      throw new UnauthorizedException("Admin does not have access to this project");
+      throw new ForbiddenException("Admin does not have access to this project");
     }
 
     return true;

@@ -44,7 +44,7 @@ public class WebConfig implements WebMvcConfigurer {
   public void addInterceptors(@NonNull InterceptorRegistry registry) {
     registry.addInterceptor(adminAuthInterceptor)
         .addPathPatterns("/admins/**", "/projects/**", "/questions/**", "/uploads/**")
-        .excludePathPatterns("/auth/**");
+        .excludePathPatterns("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**");
 
     registry.addInterceptor(projectInterceptor)
         .addPathPatterns("/projects/{projectId}/**");

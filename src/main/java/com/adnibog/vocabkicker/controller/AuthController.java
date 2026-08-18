@@ -13,7 +13,10 @@ import com.adnibog.vocabkicker.dto.response.LoginResponse;
 import com.adnibog.vocabkicker.service.AuthService;
 
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Authentication", description = "Endpoints for admin login and token management")
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -24,12 +27,14 @@ public class AuthController {
     this.authService = authService;
   }
 
+  @Operation(summary = "Admin Login", description = "Authenticates an admin and returns access and refresh tokens via cookies.")
   @PostMapping("/login")
   public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest req) {
     AuthResult authResult = authService.login(req.getEmail(), req.getPassword());
     return buildAuthResponse(authResult, "Login successful");
   }
 
+  @Operation(summary = "Refresh Token", description = "Refreshes the admin access token using a valid refresh token.")
   @PostMapping("/refresh")
   public ResponseEntity<ApiResponse<LoginResponse>> refresh(
       @CookieValue(name = "refresh_token", required = false) String refreshTokenCookie,

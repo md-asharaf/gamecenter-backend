@@ -21,7 +21,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.adnibog.vocabkicker.entity.Role;
-import com.adnibog.vocabkicker.exception.UnauthorizedException;
+import com.adnibog.vocabkicker.exception.ForbiddenException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -45,7 +45,7 @@ public class ProjectService {
 
     if (admin.getRole() != Role.SUPER_ADMIN) {
       log.warn("Admin {} attempted to create a project but is not a SUPER_ADMIN", adminId);
-      throw new UnauthorizedException("Only Super Admin can create a new project");
+      throw new ForbiddenException("Only Super Admin can create a new project");
     }
 
     String id = UUID.randomUUID().toString();
@@ -116,7 +116,8 @@ public class ProjectService {
           || req.getMainQuestionLabel().equals(req.getField2Label())) {
         project.setMainQuestionField("field2");
       } else {
-        log.warn("Update project {} failed: main question label '{}' does not match any existing fields", projectId, req.getMainQuestionLabel());
+        log.warn("Update project {} failed: main question label '{}' does not match any existing fields", projectId,
+            req.getMainQuestionLabel());
         throw new BadRequestException("The main question label must match either the first or second field label");
       }
     }

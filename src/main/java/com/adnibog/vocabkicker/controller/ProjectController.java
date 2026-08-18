@@ -20,7 +20,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Projects", description = "Endpoints for managing projects")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/projects")
 public class ProjectController {
@@ -31,6 +36,7 @@ public class ProjectController {
     this.projectService = projectService;
   }
 
+  @Operation(summary = "Create Project", description = "Creates a new project. Requires SUPER_ADMIN role.")
   @PostMapping
   public ResponseEntity<ApiResponse<ProjectDto>> createProject(
       HttpServletRequest request,
@@ -40,6 +46,7 @@ public class ProjectController {
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(project, "Project created successfully"));
   }
 
+  @Operation(summary = "List Projects", description = "Lists all projects accessible to the current admin.")
   @GetMapping
   public ResponseEntity<ApiResponse<List<ProjectDto>>> listProjects(HttpServletRequest request) {
     String adminId = (String) request.getAttribute("adminId");
@@ -47,6 +54,7 @@ public class ProjectController {
     return ResponseEntity.ok(ApiResponse.success(projects));
   }
 
+  @Operation(summary = "Update Project", description = "Updates a project's settings.")
   @PutMapping("/{id}")
   public ResponseEntity<ApiResponse<ProjectDto>> updateProject(
       @PathVariable String id,

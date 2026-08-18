@@ -12,7 +12,12 @@ import com.adnibog.vocabkicker.dto.response.QuestionPageResponse;
 import com.adnibog.vocabkicker.service.QuestionService;
 
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Questions", description = "Endpoints for managing project questions")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/projects/{projectId}/questions")
 public class QuestionController {
@@ -23,6 +28,7 @@ public class QuestionController {
     this.questionService = questionService;
   }
 
+  @Operation(summary = "Get Questions", description = "Retrieves a paginated list of questions for a project.")
   @GetMapping
   public ResponseEntity<ApiResponse<QuestionPageResponse>> getQuestions(
       @PathVariable String projectId,
@@ -33,6 +39,7 @@ public class QuestionController {
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
+  @Operation(summary = "Create Question", description = "Creates a new question using dynamic fields based on project labels.")
   @PostMapping
   public ResponseEntity<ApiResponse<QuestionDto>> createQuestion(
       @PathVariable String projectId,
@@ -42,12 +49,14 @@ public class QuestionController {
         .body(ApiResponse.success(created, "Question created successfully"));
   }
 
+  @Operation(summary = "Get Question by ID", description = "Fetches a single question.")
   @GetMapping("/{id}")
   public ResponseEntity<ApiResponse<QuestionDto>> getQuestion(@PathVariable String projectId, @PathVariable String id) {
     QuestionDto q = questionService.getQuestionById(projectId, id);
     return ResponseEntity.ok(ApiResponse.success(q));
   }
 
+  @Operation(summary = "Update Question", description = "Updates a question using dynamic fields.")
   @PutMapping("/{id}")
   public ResponseEntity<ApiResponse<QuestionDto>> updateQuestion(
       @PathVariable String projectId,
@@ -57,6 +66,7 @@ public class QuestionController {
     return ResponseEntity.ok(ApiResponse.success(updated, "Question updated successfully"));
   }
 
+  @Operation(summary = "Delete Question", description = "Deletes a question by ID.")
   @DeleteMapping("/{id}")
   public ResponseEntity<ApiResponse<Void>> deleteQuestion(@PathVariable String projectId, @PathVariable String id) {
     questionService.deleteQuestion(projectId, id);

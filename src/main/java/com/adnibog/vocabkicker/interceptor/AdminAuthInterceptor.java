@@ -10,6 +10,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import com.adnibog.vocabkicker.service.JwtService;
 import com.adnibog.vocabkicker.entity.User;
 import com.adnibog.vocabkicker.entity.Role;
+import com.adnibog.vocabkicker.exception.ForbiddenException;
 import com.adnibog.vocabkicker.exception.UnauthorizedException;
 import com.adnibog.vocabkicker.repository.UserRepository;
 
@@ -48,7 +49,7 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
           });
       if (admin.getRole() != Role.SUPER_ADMIN) {
         log.warn("Access denied for admin {}: Requires SUPER_ADMIN role to access {}", adminId, request.getRequestURI());
-        throw new UnauthorizedException("Access denied: Requires Super Admin role");
+        throw new ForbiddenException("Access denied: Requires Super Admin role");
       }
     }
 
