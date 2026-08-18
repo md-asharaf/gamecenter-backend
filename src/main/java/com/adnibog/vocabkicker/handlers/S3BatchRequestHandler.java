@@ -1,6 +1,6 @@
 package com.adnibog.vocabkicker.handlers;
 
-import com.adnibog.vocabkicker.VocabKickerServerlessApplication;
+import com.adnibog.vocabkicker.VocabKickerApplication;
 import com.adnibog.vocabkicker.service.S3BatchProcessor;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -14,7 +14,7 @@ public class S3BatchRequestHandler implements RequestHandler<S3Event, String> {
   private static ApplicationContext context;
 
   static {
-    context = SpringApplication.run(VocabKickerServerlessApplication.class);
+    context = SpringApplication.run(VocabKickerApplication.class);
   }
 
   @Override

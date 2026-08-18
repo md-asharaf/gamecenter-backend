@@ -9,6 +9,7 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.util.ArrayList;
@@ -30,8 +31,8 @@ public class DynamoDbQuestionRepository implements QuestionRepository {
   }
 
   @Override
-  public Optional<Question> findById(String id) {
-    return Optional.ofNullable(questionTable.getItem(Key.builder().partitionValue(id).build()));
+  public Optional<Question> findById(String projectId, String id) {
+    return Optional.ofNullable(questionTable.getItem(Key.builder().partitionValue(projectId).sortValue(id).build()));
   }
 
   @Override
@@ -40,26 +41,30 @@ public class DynamoDbQuestionRepository implements QuestionRepository {
   }
 
   @Override
-  public void deleteById(String id) {
-    questionTable.deleteItem(Key.builder().partitionValue(id).build());
+  public void deleteById(String projectId, String id) {
+    questionTable.deleteItem(Key.builder().partitionValue(projectId).sortValue(id).build());
   }
 
   @Override
-  public List<Question> findAll() {
-    return questionTable.scan().items().stream().toList();
+  public List<Question> findAll(String projectId) {
+    QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(projectId).build());
+    return questionTable.query(conditional).items().stream().toList();
   }
 
   @Override
-  public QuestionPage findQuestions(int limit, String lastEvaluatedKeyId, String searchKeyword) {
+  public QuestionPage findQuestions(String projectId, int limit, String lastEvaluatedKeyId, String searchKeyword) {
     Map<String, AttributeValue> exclusiveStartKey = null;
     if (lastEvaluatedKeyId != null && !lastEvaluatedKeyId.equals("null")) {
       exclusiveStartKey = new HashMap<>();
+      exclusiveStartKey.put("projectId", AttributeValue.builder().s(projectId).build());
       exclusiveStartKey.put("id", AttributeValue.builder().s(lastEvaluatedKeyId).build());
     }
 
     final Map<String, AttributeValue> finalExclusiveStartKey = exclusiveStartKey;
     List<Question> resultItems = new ArrayList<>();
     String nextKey = null;
+
+    QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(projectId).build());
 
     if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
       Pattern pattern;
@@ -69,7 +74,8 @@ public class DynamoDbQuestionRepository implements QuestionRepository {
         pattern = Pattern.compile(Pattern.quote(searchKeyword), Pattern.CASE_INSENSITIVE);
       }
 
-      Iterator<Page<Question>> iterator = questionTable.scan(r -> {
+      Iterator<Page<Question>> iterator = questionTable.query(r -> {
+        r.queryConditional(conditional);
         if (finalExclusiveStartKey != null) {
           r.exclusiveStartKey(finalExclusiveStartKey);
         }
@@ -79,9 +85,9 @@ public class DynamoDbQuestionRepository implements QuestionRepository {
         Page<Question> page = iterator.next();
         for (Question q : page.items()) {
           boolean match = false;
-          if (q.getWord() != null && pattern.matcher(q.getWord()).find())
+          if (q.getField1() != null && pattern.matcher(q.getField1()).find())
             match = true;
-          if (!match && q.getDefinition() != null && pattern.matcher(q.getDefinition()).find())
+          if (!match && q.getField2() != null && pattern.matcher(q.getField2()).find())
             match = true;
 
           if (match) {
@@ -94,7 +100,8 @@ public class DynamoDbQuestionRepository implements QuestionRepository {
         }
       }
     } else {
-      Page<Question> firstPage = questionTable.scan(r -> {
+      Page<Question> firstPage = questionTable.query(r -> {
+        r.queryConditional(conditional);
         r.limit(limit);
         if (finalExclusiveStartKey != null) {
           r.exclusiveStartKey(finalExclusiveStartKey);

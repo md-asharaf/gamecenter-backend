@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
 
 @Data
 @NoArgsConstructor
@@ -13,14 +14,20 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 @Builder
 @DynamoDbBean
 public class Question {
+  private String projectId;
   private String id;
-  private String word;
-  private String mnemonic;
-  private String definition;
+  private String field1;
+  private String field2;
+  private String field3;
   private Long createdAt;
   private Long updatedAt;
 
   @DynamoDbPartitionKey
+  public String getProjectId() {
+    return projectId;
+  }
+
+  @DynamoDbSortKey
   public String getId() {
     return id;
   }

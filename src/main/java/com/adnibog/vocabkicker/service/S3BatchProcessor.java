@@ -34,8 +34,13 @@ public class S3BatchProcessor {
     s3Event.getRecords().forEach(record -> {
       String bucket = record.getS3().getBucket().getName();
       String key = record.getS3().getObject().getKey();
+      
+      String projectId = "default";
+      if (key.contains("/")) {
+        projectId = key.substring(0, key.indexOf("/"));
+      }
 
-      logger.info("Processing file from S3: bucket={}, key={}", bucket, key);
+      logger.info("Processing file from S3: bucket={}, key={}, projectId={}", bucket, key, projectId);
 
       try (InputStream s3Stream = storageService.getFileStream(bucket, key)) {
 
@@ -51,7 +56,8 @@ public class S3BatchProcessor {
         logger.info("Parsed {} questions. Saving to database...", questions.size());
 
         for (Question q : questions) {
-          questionService.createQuestion(q);
+          q.setProjectId(projectId);
+          questionService.createQuestion(projectId, q);
         }
 
         logger.info("Successfully saved {} questions.", questions.size());

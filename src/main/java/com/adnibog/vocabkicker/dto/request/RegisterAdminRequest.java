@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.NotBlank;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -14,4 +15,6 @@ public class RegisterAdminRequest {
 
   @NotBlank(message = "Password is required")
   private String password;
+
+  private Set<String> projectIds;
 }

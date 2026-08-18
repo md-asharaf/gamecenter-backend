@@ -1,6 +1,6 @@
 package com.adnibog.vocabkicker.handlers;
 
-import com.adnibog.vocabkicker.VocabKickerServerlessApplication;
+import com.adnibog.vocabkicker.VocabKickerApplication;
 import com.amazonaws.serverless.exceptions.ContainerInitializationException;
 import com.amazonaws.serverless.proxy.model.AwsProxyRequest;
 import com.amazonaws.serverless.proxy.model.AwsProxyResponse;
@@ -17,7 +17,7 @@ public class StreamLambdaHandler implements RequestStreamHandler {
 
   static {
     try {
-      handler = SpringBootLambdaContainerHandler.getAwsProxyHandler(VocabKickerServerlessApplication.class);
+      handler = SpringBootLambdaContainerHandler.getAwsProxyHandler(VocabKickerApplication.class);
     } catch (ContainerInitializationException e) {
       e.printStackTrace();
       throw new RuntimeException("Could not initialize Spring Boot application", e);

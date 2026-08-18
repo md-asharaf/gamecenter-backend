@@ -10,7 +10,7 @@ import com.adnibog.vocabkicker.service.QuestionService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/quiz")
+@RequestMapping("/projects/{projectId}/quiz")
 public class QuizController {
 
   private final QuestionService questionService;
@@ -21,9 +21,8 @@ public class QuizController {
 
   @GetMapping
   public ResponseEntity<ApiResponse<List<QuizQuestion>>> generateQuiz(
-      @RequestParam(name = "count", required = false, defaultValue = "10") int count) {
-
-    List<QuizQuestion> quiz = questionService.generateQuiz(count);
+      @PathVariable String projectId) {
+    List<QuizQuestion> quiz = questionService.generateQuiz(projectId);
     return ResponseEntity.ok(ApiResponse.success(quiz));
   }
 }

@@ -6,13 +6,13 @@ import java.util.Optional;
 import com.adnibog.vocabkicker.entity.Question;
 
 public interface QuestionRepository {
-  Optional<Question> findById(String id);
+  Optional<Question> findById(String projectId, String id);
 
   void save(Question question);
 
-  void deleteById(String id);
+  void deleteById(String projectId, String id);
 
-  QuestionPage findQuestions(int limit, String lastEvaluatedKeyId, String searchKeyword);
+  QuestionPage findQuestions(String projectId, int limit, String lastEvaluatedKeyId, String searchKeyword);
 
-  List<Question> findAll();
+  List<Question> findAll(String projectId);
 }

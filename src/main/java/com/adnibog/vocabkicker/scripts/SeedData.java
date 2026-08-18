@@ -47,18 +47,25 @@ public class SeedData {
 
         int count = 0;
         for (Map<String, Object> q : questions) {
-          String word = (String) q.get("word");
-          String mnemonic = (String) q.get("mnemonic");
-          String definition = (String) q.get("definition");
+          String word = (String) q.get("field1");
+          String mnemonic = (String) q.get("field3");
+          String definition = (String) q.get("field2");
+
+          if (word == null || definition == null) {
+            System.err.println("Skipping invalid question in default-questions.json: " + q);
+            continue;
+          }
+
           String id = Base64.getEncoder().encodeToString(word.getBytes());
 
           Map<String, AttributeValue> questionItem = new HashMap<>();
+          questionItem.put("projectId", AttributeValue.builder().s("default").build());
           questionItem.put("id", AttributeValue.builder().s(id).build());
-          questionItem.put("word", AttributeValue.builder().s(word).build());
+          questionItem.put("field1", AttributeValue.builder().s(word).build());
           if (mnemonic != null)
-            questionItem.put("mnemonic", AttributeValue.builder().s(mnemonic).build());
+            questionItem.put("field3", AttributeValue.builder().s(mnemonic).build());
           if (definition != null)
-            questionItem.put("definition", AttributeValue.builder().s(definition).build());
+            questionItem.put("field2", AttributeValue.builder().s(definition).build());
 
           dynamoDb.putItem(PutItemRequest.builder()
               .tableName("Questions")

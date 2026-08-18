@@ -7,18 +7,26 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.adnibog.vocabkicker.interceptor.AdminAuthInterceptor;
+import com.adnibog.vocabkicker.interceptor.ProjectInterceptor;
 
 import org.springframework.lang.NonNull;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+  @NonNull
   private final AdminAuthInterceptor adminAuthInterceptor;
   private final String allowedOrigin;
 
-  public WebConfig(AdminAuthInterceptor adminAuthInterceptor,
+  @NonNull
+  private final ProjectInterceptor projectInterceptor;
+
+  public WebConfig(
+      @NonNull AdminAuthInterceptor adminAuthInterceptor,
+      @NonNull ProjectInterceptor projectInterceptor,
       @Value("${cors.allowed-origin}") String allowedOrigin) {
     this.adminAuthInterceptor = adminAuthInterceptor;
+    this.projectInterceptor = projectInterceptor;
     this.allowedOrigin = allowedOrigin;
   }
 
@@ -34,7 +42,11 @@ public class WebConfig implements WebMvcConfigurer {
 
   @Override
   public void addInterceptors(@NonNull InterceptorRegistry registry) {
-    registry.addInterceptor(java.util.Objects.requireNonNull(adminAuthInterceptor))
-        .addPathPatterns("/admins/**", "/questions/**");
+    registry.addInterceptor(adminAuthInterceptor)
+        .addPathPatterns("/admins/**", "/projects/**", "/questions/**", "/uploads/**")
+        .excludePathPatterns("/auth/**");
+
+    registry.addInterceptor(projectInterceptor)
+        .addPathPatterns("/projects/{projectId}/**");
   }
 }

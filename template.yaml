@@ -9,8 +9,8 @@ Parameters:
     NoEcho: true
   CorsAllowOrigin:
     Type: String
-    Description: "Allowed origin for CORS (e.g. http://localhost:8000)"
-    Default: "http://localhost:8000"
+    Description: "Allowed origin for CORS (e.g. http://localhost:3000)"
+    Default: "http://localhost:3000"
   ImportBucketName:
     Type: String
     Description: "Specific name for the S3 bucket to import files (must be globally unique)"
@@ -34,7 +34,7 @@ Globals:
       Variables:
         JAVA_TOOL_OPTIONS: "-XX:TieredStopAtLevel=1"
         JWT_SECRET: !Ref JwtSecret
-        MAIN_CLASS: com.adnibog.vocabkicker.VocabKickerServerlessApplication
+        MAIN_CLASS: com.adnibog.vocabkicker.VocabKickerApplication
         CORS_ALLOWED_ORIGIN: !Ref CorsAllowOrigin
         AWS_S3_IMPORT_BUCKET_NAME: !Ref ImportBucketName
 
@@ -44,11 +44,15 @@ Resources:
     Properties:
       TableName: Questions
       AttributeDefinitions:
+        - AttributeName: projectId
+          AttributeType: S
         - AttributeName: id
           AttributeType: S
       KeySchema:
-        - AttributeName: id
+        - AttributeName: projectId
           KeyType: HASH
+        - AttributeName: id
+          KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
 
   UsersTable:
@@ -60,6 +64,18 @@ Resources:
           AttributeType: S
       KeySchema:
         - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  ProjectsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Projects
+      AttributeDefinitions:
+        - AttributeName: projectId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: projectId
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
 
@@ -88,6 +104,8 @@ Resources:
             TableName: !Ref UsersTable
         - DynamoDBCrudPolicy:
             TableName: !Ref QuestionsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProjectsTable
         - S3CrudPolicy:
             BucketName: !Ref ImportBucketName
       Events:

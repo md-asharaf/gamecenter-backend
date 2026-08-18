@@ -12,7 +12,9 @@ import com.adnibog.vocabkicker.mapper.UserMapper;
 import com.adnibog.vocabkicker.repository.UserRepository;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import com.adnibog.vocabkicker.entity.Role;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,7 +38,7 @@ public class UserService {
     return userRepository.findAll().stream().map(userMapper::toDto).collect(Collectors.toList());
   }
 
-  public UserDto updateAdmin(String id, String email, String password) {
+  public UserDto updateAdmin(String id, String email, String password, Set<String> projectIds) {
     User user = userRepository.findById(id)
         .orElseThrow(() -> new NotFoundException("Admin not found"));
 
@@ -54,6 +56,10 @@ public class UserService {
       user.setPasswordHash(passwordEncoder.encode(password));
     }
 
+    if (projectIds != null) {
+      user.setProjectIds(projectIds);
+    }
+
     user.setUpdatedAt(System.currentTimeMillis());
     userRepository.save(user);
 
@@ -69,7 +75,7 @@ public class UserService {
     userRepository.deleteById(id);
   }
 
-  public void createAdmin(String email, String password) {
+  public void createAdmin(String email, String password, Set<String> projectIds) {
     if (userRepository.findByEmail(email).isPresent()) {
       throw new ConflictException("An admin user with this email already exists.");
     }
@@ -79,6 +85,8 @@ public class UserService {
         .id(UUID.randomUUID().toString())
         .email(email.toLowerCase())
         .passwordHash(passwordEncoder.encode(password))
+        .role(Role.SUB_ADMIN)
+        .projectIds(projectIds)
         .createdAt(now)
         .updatedAt(now)
         .build();

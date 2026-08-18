@@ -27,7 +27,7 @@ public class AdminController {
 
   @PostMapping
   public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterAdminRequest req) {
-    userService.createAdmin(req.getEmail(), req.getPassword());
+    userService.createAdmin(req.getEmail(), req.getPassword(), req.getProjectIds());
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null, "Admin created successfully"));
   }
 
@@ -44,7 +44,7 @@ public class AdminController {
       @PathVariable String id,
       @Valid @RequestBody UpdateAdminRequest req) {
 
-    UserDto updatedUser = userService.updateAdmin(id, req.getEmail(), req.getPassword());
+    UserDto updatedUser = userService.updateAdmin(id, req.getEmail(), req.getPassword(), req.getProjectIds());
     return ResponseEntity.ok(ApiResponse.success(updatedUser, "Admin updated successfully"));
   }
 

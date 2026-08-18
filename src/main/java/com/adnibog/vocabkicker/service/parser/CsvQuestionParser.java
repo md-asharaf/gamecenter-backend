@@ -28,9 +28,13 @@ public class CsvQuestionParser implements QuestionParser {
       for (CSVRecord record : records) {
         if (record.size() >= 3) {
           Question q = new Question();
-          q.setWord(record.get(0).trim());
-          q.setMnemonic(record.get(1).trim());
-          q.setDefinition(record.get(2).trim());
+          q.setField1(record.get(0).trim());
+          if (record.size() > 1) {
+            q.setField3(record.get(1).trim());
+          }
+          if (record.size() > 2) {
+            q.setField2(record.get(2).trim());
+          }
           questions.add(q);
         }
       }

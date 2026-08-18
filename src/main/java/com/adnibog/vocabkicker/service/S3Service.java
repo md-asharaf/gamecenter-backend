@@ -32,13 +32,13 @@ public class S3Service implements StorageService {
   }
 
   @Override
-  public UploadUrlResponse generateUploadUrl(String ext) {
+  public UploadUrlResponse generateUploadUrl(String projectId, String ext) {
     String extension = ".csv";
     if ("docx".equalsIgnoreCase(ext)) {
       extension = ".docx";
     }
 
-    String key = UUID.randomUUID().toString() + extension;
+    String key = projectId + "/" + UUID.randomUUID().toString() + extension;
 
     PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
         .signatureDuration(Duration.ofMinutes(10))

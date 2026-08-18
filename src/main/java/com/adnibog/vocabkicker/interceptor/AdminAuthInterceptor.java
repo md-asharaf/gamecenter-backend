@@ -8,7 +8,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import com.adnibog.vocabkicker.service.JwtService;
-import com.adnibog.vocabkicker.service.UserService;
+import com.adnibog.vocabkicker.entity.User;
+import com.adnibog.vocabkicker.entity.Role;
+import com.adnibog.vocabkicker.exception.UnauthorizedException;
+import com.adnibog.vocabkicker.repository.UserRepository;
 
 import org.springframework.lang.NonNull;
 
@@ -16,11 +19,11 @@ import org.springframework.lang.NonNull;
 public class AdminAuthInterceptor implements HandlerInterceptor {
 
   private final JwtService jwtService;
-  private final UserService userService;
+  private final UserRepository userRepository;
 
-  public AdminAuthInterceptor(JwtService jwtService, UserService userService) {
+  public AdminAuthInterceptor(JwtService jwtService, UserRepository userRepository) {
     this.jwtService = jwtService;
-    this.userService = userService;
+    this.userRepository = userRepository;
   }
 
   @Override
@@ -30,15 +33,18 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
       return true;
     }
 
-    if ("POST".equalsIgnoreCase(request.getMethod()) && request.getRequestURI().endsWith("/admins")) {
-      if (userService.getAdminCount() == 0) {
-        return true;
-      }
-    }
-
     String token = extractToken(request);
     Claims claims = jwtService.validateAdminToken(token);
-    request.setAttribute("adminId", claims.getSubject());
+    String adminId = claims.getSubject();
+    request.setAttribute("adminId", adminId);
+
+    if (request.getRequestURI().startsWith("/admins")) {
+      User admin = userRepository.findById(adminId)
+          .orElseThrow(() -> new UnauthorizedException("Admin not found"));
+      if (admin.getRole() != Role.SUPER_ADMIN) {
+        throw new UnauthorizedException("Access denied: Requires SUPER_ADMIN role");
+      }
+    }
 
     return true;
   }

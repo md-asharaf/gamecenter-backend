@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.AssertTrue;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -13,9 +14,12 @@ import jakarta.validation.constraints.AssertTrue;
 public class UpdateAdminRequest {
   private String email;
   private String password;
+  private Set<String> projectIds;
 
-  @AssertTrue(message = "At least one field (email, password) must be provided")
+  @AssertTrue(message = "At least one field (email, password, projectIds) must be provided")
   public boolean isAtLeastOneFieldProvided() {
-    return (email != null && !email.isBlank()) || (password != null && !password.isBlank());
+    return (email != null && !email.isBlank()) || 
+           (password != null && !password.isBlank()) ||
+           (projectIds != null);
   }
 }
