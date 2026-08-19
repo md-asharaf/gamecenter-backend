@@ -43,6 +43,16 @@ public class ProjectService {
     this.projectMapper = projectMapper;
   }
 
+  private void validateFieldLabel(String label) {
+    if (label == null || label.trim().isEmpty()) {
+      return;
+    }
+    String lower = label.trim().toLowerCase();
+    if (lower.equals("id") || lower.equals("createdat") || lower.equals("updatedat") || lower.equals("projects") || lower.equals("dynamicfields")) {
+      throw new BadRequestException("Field label '" + label + "' is a reserved keyword and cannot be used.");
+    }
+  }
+
   public Project getProjectEntityById(String projectId) {
     return projectRepository.findById(projectId)
         .orElseThrow(() -> new NotFoundException("Project not found."));
@@ -75,6 +85,11 @@ public class ProjectService {
     project.setMainQuestionField("field1");
     project.setField2Label(req != null && req.getField2Label() != null ? req.getField2Label() : "Field 2");
     project.setField3Label(req != null && req.getField3Label() != null ? req.getField3Label() : "Field 3");
+
+    validateFieldLabel(project.getField1Label());
+    validateFieldLabel(project.getField2Label());
+    validateFieldLabel(project.getField3Label());
+
     project.setCreatedAt(now);
     project.setUpdatedAt(now);
 
@@ -154,12 +169,15 @@ public class ProjectService {
       }
     }
     if (req.getField1Label() != null) {
+      validateFieldLabel(req.getField1Label());
       project.setField1Label(req.getField1Label());
     }
     if (req.getField2Label() != null) {
+      validateFieldLabel(req.getField2Label());
       project.setField2Label(req.getField2Label());
     }
     if (req.getField3Label() != null) {
+      validateFieldLabel(req.getField3Label());
       project.setField3Label(req.getField3Label());
     }
 
