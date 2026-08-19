@@ -101,6 +101,6 @@ class ProjectControllerTest {
         .requestAttr("adminId", "admin_123"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
-        .andExpect(jsonPath("$.message").value("Project deleted successfully"));
+        .andExpect(jsonPath("$.message").value("Project deleted successfully."));
   }
 }

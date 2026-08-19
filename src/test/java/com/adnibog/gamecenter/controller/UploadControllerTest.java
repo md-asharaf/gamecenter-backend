@@ -21,6 +21,7 @@ import com.adnibog.gamecenter.interceptor.AdminAuthInterceptor;
 import com.adnibog.gamecenter.interceptor.ProjectInterceptor;
 import com.adnibog.gamecenter.service.JwtService;
 import com.adnibog.gamecenter.service.StorageService;
+import com.adnibog.gamecenter.service.UploadJobService;
 
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(controllers = UploadController.class, excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
@@ -35,6 +36,9 @@ class UploadControllerTest {
 
   @MockBean
   private JwtService jwtService;
+
+  @MockBean
+  private UploadJobService uploadJobService;
 
   @Test
   void generateUploadUrl_Success() throws Exception {

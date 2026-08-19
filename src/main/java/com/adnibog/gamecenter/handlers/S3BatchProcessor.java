@@ -3,6 +3,7 @@ package com.adnibog.gamecenter.handlers;
 import com.adnibog.gamecenter.entity.Question;
 import com.adnibog.gamecenter.service.QuestionService;
 import com.adnibog.gamecenter.service.StorageService;
+import com.adnibog.gamecenter.service.UploadJobService;
 import com.adnibog.gamecenter.service.parser.QuestionParser;
 import com.adnibog.gamecenter.service.parser.QuestionParserFactory;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
@@ -24,9 +25,11 @@ public class S3BatchProcessor {
   private final QuestionService questionService;
   private final QuestionParserFactory parserFactory;
   private final StorageService storageService;
+  private final UploadJobService uploadJobService;
 
   public S3BatchProcessor(QuestionService questionService, QuestionParserFactory parserFactory,
-      StorageService storageService) {
+      StorageService storageService, UploadJobService uploadJobService) {
+    this.uploadJobService = uploadJobService;
     this.questionService = questionService;
     this.parserFactory = parserFactory;
     this.storageService = storageService;
@@ -43,6 +46,7 @@ public class S3BatchProcessor {
       }
 
       logger.info("Processing file from S3: bucket={}, key={}, projectId={}", bucket, key, projectId);
+      uploadJobService.updateJobStatus(key, "PROCESSING", null);
 
       try (InputStream s3Stream = storageService.getFileStream(bucket, key)) {
 
@@ -52,7 +56,7 @@ public class S3BatchProcessor {
         if (parserOpt.isPresent()) {
           questions = parserOpt.get().parse(s3Stream);
         } else {
-          logger.warn("Unsupported file extension for key: {}", key);
+          throw new IllegalArgumentException("Unsupported file extension for key: " + key);
         }
 
         logger.info("Parsed {} questions. Saving to database...", questions.size());
@@ -63,9 +67,15 @@ public class S3BatchProcessor {
         }
 
         logger.info("Successfully saved {} questions.", questions.size());
+        uploadJobService.updateJobStatus(key, "COMPLETED", null);
 
       } catch (Exception e) {
         logger.error("Error processing file {} from bucket {}", key, bucket, e);
+        String errorMsg = e.getMessage();
+        if (errorMsg != null && errorMsg.length() > 150) {
+          errorMsg = errorMsg.substring(0, 150) + "...";
+        }
+        uploadJobService.updateJobStatus(key, "FAILED", errorMsg);
         throw new RuntimeException(e);
       }
     });

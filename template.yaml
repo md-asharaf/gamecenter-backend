@@ -73,6 +73,18 @@ Resources:
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
 
+  UploadJobsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: UploadJobs
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
   QuestionsImportBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -98,6 +110,8 @@ Resources:
             TableName: !Ref QuestionsTable
         - DynamoDBCrudPolicy:
             TableName: !Ref ProjectsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UploadJobsTable
         - S3CrudPolicy:
             BucketName: !Ref ImportBucketName
       Events:
@@ -125,6 +139,8 @@ Resources:
             BucketName: !Ref ImportBucketName
         - DynamoDBCrudPolicy:
             TableName: !Ref QuestionsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UploadJobsTable
       Events:
         FileUpload:
           Type: S3

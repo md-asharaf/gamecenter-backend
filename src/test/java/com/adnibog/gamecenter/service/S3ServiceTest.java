@@ -28,11 +28,14 @@ class S3ServiceTest {
   @Mock
   private S3Client s3Client;
 
+  @Mock
+  private UploadJobService uploadJobService;
+
   private S3Service s3Service;
 
   @BeforeEach
   void setUp() {
-    s3Service = new S3Service(s3Presigner, s3Client, "test-bucket");
+    s3Service = new S3Service(s3Presigner, s3Client, uploadJobService, "test-bucket");
   }
 
   @Test

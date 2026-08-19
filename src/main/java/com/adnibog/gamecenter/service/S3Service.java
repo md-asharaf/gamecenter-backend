@@ -20,6 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class S3Service implements StorageService {
 
+  private final UploadJobService uploadJobService;
+
   private final S3Presigner presigner;
   private final S3Client s3Client;
   private final String bucketName;
@@ -27,7 +29,9 @@ public class S3Service implements StorageService {
   public S3Service(
       S3Presigner presigner,
       S3Client s3Client,
+      UploadJobService uploadJobService,
       @Value("${aws.s3.import-bucket-name}") String bucketName) {
+    this.uploadJobService = uploadJobService;
     this.presigner = presigner;
     this.s3Client = s3Client;
     this.bucketName = bucketName;
@@ -50,6 +54,7 @@ public class S3Service implements StorageService {
     PresignedPutObjectRequest presignedRequest = presigner.presignPutObject(presignRequest);
 
     log.info("Generated presigned upload URL for project {} (key: {})", projectId, key);
+    uploadJobService.createJob(key, projectId);
     return new UploadUrlResponse(presignedRequest.url().toString(), key);
   }
 
