@@ -13,6 +13,7 @@ import com.adnibog.gamecenter.exception.ConflictException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.UserMapper;
 import com.adnibog.gamecenter.repository.UserRepository;
+import java.util.Optional;
 
 import java.util.HashSet;
 import java.util.List;
@@ -42,10 +43,21 @@ public class UserService {
     return userMapper.toDto(getUserEntityById(id));
   }
 
-  public UserPageResponse getAllAdmins(String currentAdminId, int limit, String lastEvaluatedKey, String search) {
+  public Optional<User> findByEmail(String email) {
+    return userRepository.findByEmail(email);
+  }
+
+  public Optional<User> findById(String id) {
+    return userRepository.findById(id);
+  }
+
+  public void saveUser(User user) {
+    userRepository.save(user);
+  }
+
+  public UserPageResponse getAllAdmins(int limit, String lastEvaluatedKey, String search) {
     UserPage page = userRepository.findUsers(limit, lastEvaluatedKey, search);
     List<UserDto> dtos = page.getItems().stream()
-        .filter(user -> !user.getId().equals(currentAdminId))
         .map(userMapper::toDto)
         .collect(Collectors.toList());
     return new UserPageResponse(dtos, page.getLastEvaluatedKey());

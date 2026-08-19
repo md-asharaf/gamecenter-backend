@@ -52,7 +52,8 @@ class AuthControllerTest {
         .content(loginJson))
         .andExpect(status().isOk())
         .andExpect(cookie().value("admin_token", "access_123"))
-        .andExpect(jsonPath("$.data.refreshToken").value("refresh_123"));
+        .andExpect(cookie().value("refresh_token", "refresh_123"))
+        .andExpect(jsonPath("$.data.message").value("Login successful"));
   }
 
   @Test
@@ -81,6 +82,7 @@ class AuthControllerTest {
         .content(refreshJson))
         .andExpect(status().isOk())
         .andExpect(cookie().value("admin_token", "new_access_123"))
-        .andExpect(jsonPath("$.data.refreshToken").value("new_refresh_123"));
+        .andExpect(cookie().value("refresh_token", "new_refresh_123"))
+        .andExpect(jsonPath("$.data.message").value("Token refreshed"));
   }
 }

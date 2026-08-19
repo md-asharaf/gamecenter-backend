@@ -11,10 +11,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.adnibog.gamecenter.dto.response.UploadUrlResponse;
 
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
@@ -25,12 +25,14 @@ class S3ServiceTest {
   @Mock
   private S3Presigner s3Presigner;
 
+  @Mock
+  private S3Client s3Client;
+
   private S3Service s3Service;
 
   @BeforeEach
   void setUp() {
-    s3Service = new S3Service("test-bucket");
-    ReflectionTestUtils.setField(s3Service, "presigner", s3Presigner);
+    s3Service = new S3Service(s3Presigner, s3Client, "test-bucket");
   }
 
   @Test
@@ -40,7 +42,6 @@ class S3ServiceTest {
 
     PresignedPutObjectRequest presignedReq = mock(PresignedPutObjectRequest.class);
     when(presignedReq.url()).thenReturn(URI.create("https://s3.amazonaws.com/test").toURL());
-    
     when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedReq);
 
     UploadUrlResponse result = s3Service.generateUploadUrl(projectId, ext);
@@ -58,7 +59,6 @@ class S3ServiceTest {
 
     PresignedPutObjectRequest presignedReq = mock(PresignedPutObjectRequest.class);
     when(presignedReq.url()).thenReturn(URI.create("https://s3.amazonaws.com/test").toURL());
-    
     when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedReq);
 
     UploadUrlResponse result = s3Service.generateUploadUrl(projectId, ext);

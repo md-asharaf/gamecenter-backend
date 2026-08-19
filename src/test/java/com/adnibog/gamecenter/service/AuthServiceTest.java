@@ -3,7 +3,6 @@ package com.adnibog.gamecenter.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import java.util.Date;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +16,6 @@ import com.adnibog.gamecenter.dto.internal.AuthResult;
 import com.adnibog.gamecenter.entity.Role;
 import com.adnibog.gamecenter.entity.User;
 import com.adnibog.gamecenter.exception.UnauthorizedException;
-import com.adnibog.gamecenter.repository.UserRepository;
 
 import io.jsonwebtoken.Claims;
 
@@ -25,7 +23,7 @@ import io.jsonwebtoken.Claims;
 class AuthServiceTest {
 
   @Mock
-  private UserRepository userRepository;
+  private UserService userService;
 
   @Mock
   private PasswordEncoder passwordEncoder;
@@ -37,7 +35,7 @@ class AuthServiceTest {
 
   @BeforeEach
   void setUp() {
-    authService = new AuthService(userRepository, jwtService, passwordEncoder);
+    authService = new AuthService(userService, jwtService, passwordEncoder);
   }
 
   @Test
@@ -48,7 +46,7 @@ class AuthServiceTest {
     user.setPasswordHash("encoded_password");
     user.setRole(Role.SUPER_ADMIN);
 
-    when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(user));
+    when(userService.findByEmail("admin@example.com")).thenReturn(Optional.of(user));
     when(passwordEncoder.matches("password", "encoded_password")).thenReturn(true);
     when(jwtService.generateAccessToken("user1", "admin@example.com")).thenReturn("access_token");
     when(jwtService.generateRefreshToken("user1")).thenReturn("refresh_token");
@@ -59,7 +57,7 @@ class AuthServiceTest {
     assertNotNull(result);
     assertEquals("access_token", result.getAccessToken());
     assertEquals("refresh_token", result.getRefreshToken());
-    verify(userRepository).save(user);
+    verify(userService).saveUser(user);
   }
 
   @Test
@@ -68,7 +66,7 @@ class AuthServiceTest {
     user.setEmail("admin@example.com");
     user.setPasswordHash("encoded_password");
 
-    when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(user));
+    when(userService.findByEmail("admin@example.com")).thenReturn(Optional.of(user));
     when(passwordEncoder.matches("wrong", "encoded_password")).thenReturn(false);
 
     assertThrows(UnauthorizedException.class, () -> authService.login("admin@example.com", "wrong"));
@@ -86,10 +84,9 @@ class AuthServiceTest {
     Claims claims = mock(Claims.class);
     when(claims.getSubject()).thenReturn("user1");
     when(claims.get("type")).thenReturn("refresh");
-    when(claims.getExpiration()).thenReturn(new Date(System.currentTimeMillis() + 100000));
 
     when(jwtService.parseToken("valid_refresh_token")).thenReturn(claims);
-    when(userRepository.findById("user1")).thenReturn(Optional.of(user));
+    when(userService.findById("user1")).thenReturn(Optional.of(user));
     when(passwordEncoder.matches("valid_refresh_token", "encoded_refresh_token")).thenReturn(true);
 
     when(jwtService.generateAccessToken("user1", "admin@example.com")).thenReturn("new_access_token");

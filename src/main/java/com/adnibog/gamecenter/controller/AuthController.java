@@ -71,6 +71,6 @@ public class AuthController {
 
     return ResponseEntity.ok()
         .headers(responseHeaders)
-        .body(ApiResponse.success(new LoginResponse(message, authResult.getRefreshToken()), message));
+        .body(ApiResponse.success(new LoginResponse(message), message));
   }
 }

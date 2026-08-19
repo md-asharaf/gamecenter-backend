@@ -5,14 +5,13 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
+
 import org.springframework.web.servlet.HandlerInterceptor;
 
-import com.adnibog.gamecenter.service.JwtService;
-import com.adnibog.gamecenter.entity.User;
 import com.adnibog.gamecenter.entity.Role;
 import com.adnibog.gamecenter.exception.ForbiddenException;
-import com.adnibog.gamecenter.exception.UnauthorizedException;
-import com.adnibog.gamecenter.repository.UserRepository;
+import com.adnibog.gamecenter.service.JwtService;
+import com.adnibog.gamecenter.service.UserService;
 
 import org.springframework.lang.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -22,11 +21,11 @@ import lombok.extern.slf4j.Slf4j;
 public class AdminAuthInterceptor implements HandlerInterceptor {
 
   private final JwtService jwtService;
-  private final UserRepository userRepository;
+  private final UserService userService;
 
-  public AdminAuthInterceptor(JwtService jwtService, UserRepository userRepository) {
+  public AdminAuthInterceptor(JwtService jwtService, UserService userService) {
     this.jwtService = jwtService;
-    this.userRepository = userRepository;
+    this.userService = userService;
   }
 
   @Override
@@ -41,14 +40,15 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
     String adminId = claims.getSubject();
     request.setAttribute("adminId", adminId);
 
-    if (request.getRequestURI().startsWith("/admins")) {
-      User admin = userRepository.findById(adminId)
-          .orElseThrow(() -> {
-            log.warn("Admin not found for ID: {}", adminId);
-            return new UnauthorizedException("Admin not found");
-          });
+    // /admins/me is accessible to any authenticated admin (they fetch their own
+    // profile).
+    // All other /admins/** operations (list, create, update, delete) require
+    // SUPER_ADMIN.
+    String uri = request.getRequestURI();
+    if (uri.startsWith("/admins") && !uri.equals("/admins/me")) {
+      var admin = userService.getUserEntityById(adminId);
       if (admin.getRole() != Role.SUPER_ADMIN) {
-        log.warn("Access denied for admin {}: Requires SUPER_ADMIN role to access {}", adminId, request.getRequestURI());
+        log.warn("Access denied for admin {}: Requires SUPER_ADMIN role to access {}", adminId, uri);
         throw new ForbiddenException("Access denied: Requires Super Admin role");
       }
     }

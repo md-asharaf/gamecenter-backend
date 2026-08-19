@@ -20,8 +20,8 @@ import com.adnibog.gamecenter.dto.response.ProjectPageResponse;
 
 import com.adnibog.gamecenter.service.ProjectService;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.RequestAttribute;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -42,9 +42,8 @@ public class ProjectController {
   @Operation(summary = "Create Project", description = "Creates a new project. Requires SUPER_ADMIN role.")
   @PostMapping
   public ResponseEntity<ApiResponse<ProjectDto>> createProject(
-      HttpServletRequest request,
+      @RequestAttribute("adminId") String adminId,
       @RequestBody(required = false) CreateProjectRequest req) {
-    String adminId = (String) request.getAttribute("adminId");
     ProjectDto project = projectService.createProject(adminId, req);
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(project, "Project created successfully"));
   }
@@ -52,11 +51,10 @@ public class ProjectController {
   @Operation(summary = "List Projects", description = "Lists all projects accessible to the current admin.")
   @GetMapping
   public ResponseEntity<ApiResponse<ProjectPageResponse>> listProjects(
-      HttpServletRequest request,
+      @RequestAttribute("adminId") String adminId,
       @RequestParam(defaultValue = "10") int limit,
       @RequestParam(required = false) String lastEvaluatedKey,
       @RequestParam(required = false) String search) {
-    String adminId = (String) request.getAttribute("adminId");
     ProjectPageResponse projects = projectService.listProjects(adminId, limit, lastEvaluatedKey, search);
     return ResponseEntity.ok(ApiResponse.success(projects));
   }
@@ -72,8 +70,9 @@ public class ProjectController {
 
   @Operation(summary = "Delete Project", description = "Deletes a project and its questions. Requires SUPER_ADMIN role.")
   @DeleteMapping("/{id}")
-  public ResponseEntity<ApiResponse<Void>> deleteProject(HttpServletRequest request, @PathVariable String id) {
-    String adminId = (String) request.getAttribute("adminId");
+  public ResponseEntity<ApiResponse<Void>> deleteProject(
+      @RequestAttribute("adminId") String adminId, 
+      @PathVariable String id) {
     projectService.deleteProject(adminId, id);
     return ResponseEntity.ok(ApiResponse.success(null, "Project deleted successfully"));
   }

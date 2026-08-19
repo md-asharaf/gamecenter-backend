@@ -13,6 +13,7 @@ import com.adnibog.gamecenter.entity.Project;
 import com.adnibog.gamecenter.exception.BadRequestException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.QuestionMapper;
+import com.adnibog.gamecenter.mapper.ProjectMapper;
 import com.adnibog.gamecenter.repository.QuestionPage;
 import com.adnibog.gamecenter.repository.QuestionRepository;
 
@@ -31,12 +32,14 @@ public class QuestionService {
   private final QuestionRepository questionRepository;
   private final QuestionMapper questionMapper;
   private final ProjectService projectService;
+  private final ProjectMapper projectMapper;
 
   public QuestionService(QuestionRepository questionRepository, QuestionMapper questionMapper,
-      ProjectService projectService) {
+      ProjectService projectService, ProjectMapper projectMapper) {
     this.questionRepository = questionRepository;
     this.questionMapper = questionMapper;
     this.projectService = projectService;
+    this.projectMapper = projectMapper;
   }
 
   public QuestionPageResponse getQuestions(String projectId, int limit, String lastEvaluatedKeyId,
@@ -144,7 +147,7 @@ public class QuestionService {
 
   public List<QuizQuestion> generateQuiz(String projectId) {
     Project project = projectService.getProjectEntityById(projectId);
-    ProjectDto projectDto = projectService.getProjectById(projectId);
+    ProjectDto projectDto = projectMapper.toDto(project);
 
     int numberOfQuestions = project.getNumberOfQuestionsInQuiz() != null ? project.getNumberOfQuestionsInQuiz() : 10;
     String mainField = project.getMainQuestionField() != null ? project.getMainQuestionField() : "field1";

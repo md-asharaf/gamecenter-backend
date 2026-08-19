@@ -28,9 +28,6 @@ public class JwtService {
     this.cachedSecretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
   }
 
-  private SecretKey getSecretKey() {
-    return cachedSecretKey;
-  }
 
   public long getRefreshExpiration() {
     return refreshExpiration;
@@ -43,7 +40,7 @@ public class JwtService {
 
     try {
       Claims claims = Jwts.parser()
-          .verifyWith(getSecretKey())
+          .verifyWith(cachedSecretKey)
           .build()
           .parseSignedClaims(token)
           .getPayload();
@@ -64,7 +61,7 @@ public class JwtService {
 
   public Claims parseToken(String token) {
     return Jwts.parser()
-        .verifyWith(getSecretKey())
+        .verifyWith(cachedSecretKey)
         .build()
         .parseSignedClaims(token)
         .getPayload();
@@ -77,7 +74,7 @@ public class JwtService {
         .claim("type", "access")
         .issuedAt(new Date())
         .expiration(new Date(System.currentTimeMillis() + accessExpiration))
-        .signWith(getSecretKey())
+        .signWith(cachedSecretKey)
         .compact();
   }
 
@@ -87,7 +84,7 @@ public class JwtService {
         .claim("type", "refresh")
         .issuedAt(new Date())
         .expiration(new Date(System.currentTimeMillis() + refreshExpiration))
-        .signWith(getSecretKey())
+        .signWith(cachedSecretKey)
         .compact();
   }
 }

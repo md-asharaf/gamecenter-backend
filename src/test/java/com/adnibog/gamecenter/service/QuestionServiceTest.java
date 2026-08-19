@@ -24,6 +24,7 @@ import com.adnibog.gamecenter.dto.response.QuestionDto;
 import com.adnibog.gamecenter.entity.Project;
 import com.adnibog.gamecenter.entity.Question;
 import com.adnibog.gamecenter.exception.BadRequestException;
+import com.adnibog.gamecenter.mapper.ProjectMapper;
 import com.adnibog.gamecenter.mapper.QuestionMapper;
 import com.adnibog.gamecenter.repository.QuestionRepository;
 
@@ -39,11 +40,14 @@ class QuestionServiceTest {
   @Mock
   private ProjectService projectService;
 
+  @Mock
+  private ProjectMapper projectMapper;
+
   private QuestionService questionService;
 
   @BeforeEach
   void setUp() {
-    questionService = new QuestionService(questionRepository, questionMapper, projectService);
+    questionService = new QuestionService(questionRepository, questionMapper, projectService, projectMapper);
   }
 
   @Test
@@ -129,7 +133,7 @@ class QuestionServiceTest {
     project.setNumberOfQuestionsInQuiz(10);
 
     when(projectService.getProjectEntityById(projectId)).thenReturn(project);
-    when(projectService.getProjectById(projectId)).thenReturn(new ProjectDto());
+    when(projectMapper.toDto(project)).thenReturn(new ProjectDto());
 
     List<Question> questions = new ArrayList<>();
     for (int i = 0; i < 5; i++) {

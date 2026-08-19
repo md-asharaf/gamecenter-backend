@@ -24,12 +24,12 @@ public class S3Service implements StorageService {
   private final S3Client s3Client;
   private final String bucketName;
 
-  public S3Service(@Value("${aws.s3.import-bucket-name}") String bucketName) {
-    this.presigner = S3Presigner.create();
-    this.s3Client = S3Client.builder()
-        .region(software.amazon.awssdk.regions.Region.AP_SOUTH_1)
-        .httpClientBuilder(software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient.builder())
-        .build();
+  public S3Service(
+      S3Presigner presigner,
+      S3Client s3Client,
+      @Value("${aws.s3.import-bucket-name}") String bucketName) {
+    this.presigner = presigner;
+    this.s3Client = s3Client;
     this.bucketName = bucketName;
   }
 
@@ -40,7 +40,7 @@ public class S3Service implements StorageService {
       extension = ".docx";
     }
 
-    String key = projectId + "/" + UUID.randomUUID().toString() + extension;
+    String key = projectId + "/" + UUID.randomUUID() + extension;
 
     PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
         .signatureDuration(Duration.ofMinutes(10))

@@ -9,9 +9,6 @@ import com.adnibog.gamecenter.entity.User;
 import com.adnibog.gamecenter.exception.BadRequestException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.exception.UnauthorizedException;
-import com.adnibog.gamecenter.repository.UserRepository;
-
-import java.util.Date;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,18 +16,18 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class AuthService {
 
-  private final UserRepository userRepository;
+  private final UserService userService;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
 
-  public AuthService(UserRepository userRepository, JwtService jwtService, PasswordEncoder passwordEncoder) {
-    this.userRepository = userRepository;
+  public AuthService(UserService userService, JwtService jwtService, PasswordEncoder passwordEncoder) {
+    this.userService = userService;
     this.jwtService = jwtService;
     this.passwordEncoder = passwordEncoder;
   }
 
   public AuthResult login(String email, String password) {
-    Optional<User> userOpt = userRepository.findByEmail(email);
+    Optional<User> userOpt = userService.findByEmail(email);
     if (userOpt.isEmpty()) {
       log.warn("Login failed: User not found for email {}", email);
       throw new UnauthorizedException("Invalid credentials");
@@ -62,12 +59,8 @@ public class AuthService {
       throw new UnauthorizedException("Invalid token type");
     }
 
-    if (claims.getExpiration().before(new Date())) {
-      throw new UnauthorizedException("Refresh token expired");
-    }
-
     String userId = claims.getSubject();
-    Optional<User> userOpt = userRepository.findById(userId);
+    Optional<User> userOpt = userService.findById(userId);
 
     if (userOpt.isEmpty()) {
       log.warn("Token refresh failed: User {} not found", userId);
@@ -98,7 +91,7 @@ public class AuthService {
 
     user.setRefreshTokenHash(passwordEncoder.encode(refreshToken));
     user.setRefreshTokenExpiry(System.currentTimeMillis() + refreshExpiration);
-    userRepository.save(user);
+    userService.saveUser(user);
 
     return new AuthResult(accessToken, refreshToken);
   }
