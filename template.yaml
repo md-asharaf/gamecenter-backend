@@ -141,6 +141,8 @@ Resources:
             TableName: !Ref QuestionsTable
         - DynamoDBCrudPolicy:
             TableName: !Ref UploadJobsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProjectsTable
       Events:
         FileUpload:
           Type: S3
