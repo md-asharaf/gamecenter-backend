@@ -91,6 +91,13 @@ public class UserService {
     return userMapper.toDto(user);
   }
 
+  public void updatePassword(String id, String newPassword) {
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new NotFoundException("Admin not found"));
+    user.setPasswordHash(passwordEncoder.encode(newPassword));
+    user.setUpdatedAt(System.currentTimeMillis());
+    userRepository.save(user);
+  }
   public void deleteAdmin(String currentAdminId, String id) {
     if (currentAdminId.equals(id)) {
       throw new BadRequestException("Cannot delete yourself");

@@ -46,6 +46,36 @@ public class AuthController {
     return buildAuthResponse(authResult, "Token refreshed");
   }
 
+  @Operation(summary = "Admin Logout", description = "Clears the admin access and refresh tokens from cookies.")
+  @PostMapping("/logout")
+  public ResponseEntity<ApiResponse<String>> logout() {
+    ResponseCookie clearAccessCookie = ResponseCookie
+        .from("admin_token", "")
+        .httpOnly(true)
+        .secure(true)
+        .path("/")
+        .maxAge(0)
+        .sameSite("None")
+        .build();
+
+    ResponseCookie clearRefreshCookie = ResponseCookie
+        .from("refresh_token", "")
+        .httpOnly(true)
+        .secure(true)
+        .path("/")
+        .maxAge(0)
+        .sameSite("None")
+        .build();
+
+    HttpHeaders responseHeaders = new HttpHeaders();
+    responseHeaders.add(HttpHeaders.SET_COOKIE, clearAccessCookie.toString() + "; Partitioned");
+    responseHeaders.add(HttpHeaders.SET_COOKIE, clearRefreshCookie.toString() + "; Partitioned");
+
+    return ResponseEntity.ok()
+        .headers(responseHeaders)
+        .body(ApiResponse.success("Logged out successfully", "Logout successful"));
+  }
+
   private ResponseEntity<ApiResponse<LoginResponse>> buildAuthResponse(AuthResult authResult, String message) {
     ResponseCookie accessCookie = ResponseCookie
         .from("admin_token", java.util.Objects.requireNonNull(authResult.getAccessToken()))
@@ -66,8 +96,8 @@ public class AuthController {
         .build();
 
     HttpHeaders responseHeaders = new HttpHeaders();
-    responseHeaders.add(HttpHeaders.SET_COOKIE, accessCookie.toString());
-    responseHeaders.add(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+    responseHeaders.add(HttpHeaders.SET_COOKIE, accessCookie.toString() + "; Partitioned");
+    responseHeaders.add(HttpHeaders.SET_COOKIE, refreshCookie.toString() + "; Partitioned");
 
     return ResponseEntity.ok()
         .headers(responseHeaders)

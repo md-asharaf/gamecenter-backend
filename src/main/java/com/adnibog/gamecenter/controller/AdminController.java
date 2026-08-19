@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.adnibog.gamecenter.dto.request.RegisterAdminRequest;
 import com.adnibog.gamecenter.dto.request.UpdateAdminRequest;
+import com.adnibog.gamecenter.dto.request.ChangePasswordRequest;
 import com.adnibog.gamecenter.dto.response.ApiResponse;
 import com.adnibog.gamecenter.dto.response.UserDto;
 import com.adnibog.gamecenter.dto.response.UserPageResponse;
@@ -42,6 +43,15 @@ public class AdminController {
   public ResponseEntity<ApiResponse<UserDto>> getMe(@RequestAttribute("adminId") String currentAdminId) {
     UserDto me = userService.getAdminById(currentAdminId);
     return ResponseEntity.ok(ApiResponse.success(me));
+  }
+
+  @Operation(summary = "Change Password", description = "Updates the currently authenticated admin's password.")
+  @PutMapping("/me/password")
+  public ResponseEntity<ApiResponse<Void>> changePassword(
+      @RequestAttribute("adminId") String currentAdminId,
+      @Valid @RequestBody ChangePasswordRequest req) {
+    userService.updatePassword(currentAdminId, req.getPassword());
+    return ResponseEntity.ok(ApiResponse.success(null, "Password updated successfully"));
   }
 
   @Operation(summary = "List Admins", description = "Returns a paginated list of all admins. Requires SUPER_ADMIN role.")

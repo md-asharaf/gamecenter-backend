@@ -45,7 +45,7 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
     // All other /admins/** operations (list, create, update, delete) require
     // SUPER_ADMIN.
     String uri = request.getRequestURI();
-    if (uri.startsWith("/admins") && !uri.equals("/admins/me")) {
+    if (uri.startsWith("/admins") && !uri.startsWith("/admins/me")) {
       var admin = userService.getUserEntityById(adminId);
       if (admin.getRole() != Role.SUPER_ADMIN) {
         log.warn("Access denied for admin {}: Requires SUPER_ADMIN role to access {}", adminId, uri);
