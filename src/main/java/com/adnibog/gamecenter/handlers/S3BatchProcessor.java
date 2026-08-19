@@ -61,10 +61,7 @@ public class S3BatchProcessor {
 
         logger.info("Parsed {} questions. Saving to database...", questions.size());
 
-        for (Question q : questions) {
-          q.setProjectId(projectId);
-          questionService.saveQuestion(projectId, q);
-        }
+        questionService.saveQuestionsBatch(projectId, questions);
 
         logger.info("Successfully saved {} questions.", questions.size());
         uploadJobService.updateJobStatus(key, "COMPLETED", null);

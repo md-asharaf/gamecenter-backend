@@ -10,6 +10,10 @@ import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.WriteBatch;
+import software.amazon.awssdk.enhanced.dynamodb.model.BatchWriteItemEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.BatchWriteResult;
+import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.util.ArrayList;
@@ -18,15 +22,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
+import java.util.UUID;
 
 @Repository
 public class DynamoDbQuestionRepository implements QuestionRepository {
 
   private final DynamoDbTable<Question> questionTable;
+  private final DynamoDbEnhancedClient enhancedClient;
 
   public DynamoDbQuestionRepository(final DynamoDbEnhancedClient enhancedClient) {
+    this.enhancedClient = enhancedClient;
     this.questionTable = enhancedClient.table("Questions", TableSchema.fromBean(Question.class));
   }
 
@@ -38,6 +43,49 @@ public class DynamoDbQuestionRepository implements QuestionRepository {
   @Override
   public void save(Question question) {
     questionTable.putItem(question);
+  }
+
+  @Override
+  public void saveAll(List<Question> questions) {
+    if (questions == null || questions.isEmpty()) {
+      return;
+    }
+
+    int batchSize = 25;
+    for (int i = 0; i < questions.size(); i += batchSize) {
+      int end = Math.min(i + batchSize, questions.size());
+      List<Question> chunk = questions.subList(i, end);
+
+      WriteBatch.Builder<Question> batchBuilder = WriteBatch.builder(Question.class).mappedTableResource(questionTable);
+
+      for (Question q : chunk) {
+        batchBuilder.addPutItem(r -> r.item(q));
+      }
+
+      BatchWriteItemEnhancedRequest batchRequest = BatchWriteItemEnhancedRequest.builder()
+          .addWriteBatch(batchBuilder.build())
+          .build();
+
+      BatchWriteResult result = enhancedClient.batchWriteItem(batchRequest);
+
+      while (!result.unprocessedPutItemsForTable(questionTable).isEmpty()) {
+        try {
+          Thread.sleep(50);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+
+        batchBuilder = WriteBatch.builder(Question.class).mappedTableResource(questionTable);
+        for (Question req : result.unprocessedPutItemsForTable(questionTable)) {
+          batchBuilder.addPutItem(r -> r.item(req));
+        }
+
+        batchRequest = BatchWriteItemEnhancedRequest.builder()
+            .addWriteBatch(batchBuilder.build())
+            .build();
+        result = enhancedClient.batchWriteItem(batchRequest);
+      }
+    }
   }
 
   @Override
@@ -73,15 +121,14 @@ public class DynamoDbQuestionRepository implements QuestionRepository {
     QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(projectId).build());
 
     if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
-      Pattern pattern;
-      try {
-        pattern = Pattern.compile(searchKeyword, Pattern.CASE_INSENSITIVE);
-      } catch (PatternSyntaxException e) {
-        pattern = Pattern.compile(Pattern.quote(searchKeyword), Pattern.CASE_INSENSITIVE);
-      }
+      Expression filterExpression = Expression.builder()
+          .expression("contains(field1, :v) OR contains(field2, :v) OR contains(field3, :v)")
+          .putExpressionValue(":v", AttributeValue.builder().s(searchKeyword).build())
+          .build();
 
       Iterator<Page<Question>> iterator = questionTable.query(r -> {
         r.queryConditional(conditional);
+        r.filterExpression(filterExpression);
         if (finalExclusiveStartKey != null) {
           r.exclusiveStartKey(finalExclusiveStartKey);
         }
@@ -90,18 +137,10 @@ public class DynamoDbQuestionRepository implements QuestionRepository {
       outerLoop: while (iterator.hasNext()) {
         Page<Question> page = iterator.next();
         for (Question q : page.items()) {
-          boolean match = false;
-          if (q.getField1() != null && pattern.matcher(q.getField1()).find())
-            match = true;
-          if (!match && q.getField2() != null && pattern.matcher(q.getField2()).find())
-            match = true;
-
-          if (match) {
-            resultItems.add(q);
-            if (resultItems.size() == limit) {
-              nextKey = q.getId();
-              break outerLoop;
-            }
+          resultItems.add(q);
+          if (resultItems.size() == limit) {
+            nextKey = q.getId();
+            break outerLoop;
           }
         }
       }
@@ -123,6 +162,29 @@ public class DynamoDbQuestionRepository implements QuestionRepository {
     }
 
     return new QuestionPage(resultItems, nextKey);
+  }
+
+  @Override
+  public List<Question> findRandomQuestions(String projectId, int amount) {
+    String randomStart = UUID.randomUUID().toString();
+    QueryConditional forward = QueryConditional.sortGreaterThanOrEqualTo(
+        Key.builder().partitionValue(projectId).sortValue(randomStart).build());
+
+    List<Question> results = new ArrayList<>();
+    Iterator<Page<Question>> iterator = questionTable.query(r -> r.queryConditional(forward).limit(amount)).iterator();
+    if (iterator.hasNext()) {
+      results.addAll(iterator.next().items());
+    }
+
+    if (results.size() < amount) {
+      QueryConditional wrap = QueryConditional.keyEqualTo(Key.builder().partitionValue(projectId).build());
+      Iterator<Page<Question>> wrapIter = questionTable
+          .query(r -> r.queryConditional(wrap).limit(amount - results.size())).iterator();
+      if (wrapIter.hasNext()) {
+        results.addAll(wrapIter.next().items());
+      }
+    }
+    return results;
   }
 
   @Override

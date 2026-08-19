@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -82,20 +83,23 @@ public class DynamoDbUserRepository implements UserRepository {
 
     final Expression finalFilterExpression = filterExpression;
 
-    Page<User> firstPage = userTable.scan(r -> {
-      r.limit(limit);
+    Iterator<Page<User>> iterator = userTable.scan(r -> {
       if (finalExclusiveStartKey != null) {
         r.exclusiveStartKey(finalExclusiveStartKey);
       }
       if (finalFilterExpression != null) {
         r.filterExpression(finalFilterExpression);
       }
-    }).stream().findFirst().orElse(null);
+    }).iterator();
 
-    if (firstPage != null) {
-      resultItems.addAll(firstPage.items());
-      if (firstPage.lastEvaluatedKey() != null && firstPage.lastEvaluatedKey().containsKey("id")) {
-        nextKey = firstPage.lastEvaluatedKey().get("id").s();
+    outerLoop: while (iterator.hasNext()) {
+      Page<User> page = iterator.next();
+      for (User u : page.items()) {
+        resultItems.add(u);
+        if (resultItems.size() == limit) {
+          nextKey = u.getId();
+          break outerLoop;
+        }
       }
     }
 

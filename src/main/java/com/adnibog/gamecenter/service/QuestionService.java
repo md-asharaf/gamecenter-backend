@@ -103,7 +103,24 @@ public class QuestionService {
     }
     q.setUpdatedAt(now);
     questionRepository.save(q);
-    log.info("Saved question {} for project {} via batch import", q.getId(), projectId);
+    log.info("Saved question {} for project {}", q.getId(), projectId);
+  }
+
+  public void saveQuestionsBatch(String projectId, List<Question> questions) {
+    projectService.getProjectById(projectId);
+    long now = System.currentTimeMillis();
+    for (Question q : questions) {
+      q.setProjectId(projectId);
+      if (q.getId() == null || q.getId().isBlank()) {
+        q.setId(java.util.UUID.randomUUID().toString());
+        q.setCreatedAt(now);
+      } else if (q.getCreatedAt() == null) {
+        q.setCreatedAt(now);
+      }
+      q.setUpdatedAt(now);
+    }
+    questionRepository.saveAll(questions);
+    log.info("Saved {} questions in batch for project {}", questions.size(), projectId);
   }
 
   public QuestionDto updateQuestion(String projectId, String id, UpdateQuestionRequest req) {
@@ -152,7 +169,8 @@ public class QuestionService {
     int numberOfQuestions = project.getNumberOfQuestionsInQuiz() != null ? project.getNumberOfQuestionsInQuiz() : 10;
     String mainField = project.getMainQuestionField() != null ? project.getMainQuestionField() : "field1";
 
-    List<Question> allQuestions = new ArrayList<>(questionRepository.findAll(projectId));
+    int amountToFetch = Math.max(numberOfQuestions * 4, 50);
+    List<Question> allQuestions = new ArrayList<>(questionRepository.findRandomQuestions(projectId, amountToFetch));
 
     if (allQuestions.size() < numberOfQuestions) {
       throw new BadRequestException("Not enough questions in database to form a quiz");

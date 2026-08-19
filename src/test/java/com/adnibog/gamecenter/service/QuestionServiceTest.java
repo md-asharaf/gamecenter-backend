@@ -139,7 +139,7 @@ class QuestionServiceTest {
     for (int i = 0; i < 5; i++) {
       questions.add(new Question());
     }
-    when(questionRepository.findAll(projectId)).thenReturn(questions);
+    when(questionRepository.findRandomQuestions(eq(projectId), anyInt())).thenReturn(questions);
 
     assertThrows(BadRequestException.class, () -> questionService.generateQuiz(projectId));
   }

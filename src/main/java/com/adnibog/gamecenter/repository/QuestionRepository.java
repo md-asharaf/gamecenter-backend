@@ -10,6 +10,8 @@ public interface QuestionRepository {
 
   void save(Question question);
 
+  void saveAll(List<Question> questions);
+
   void deleteById(String projectId, String id);
 
   void deleteAllByProjectId(String projectId);
@@ -17,6 +19,8 @@ public interface QuestionRepository {
   QuestionPage findQuestions(String projectId, int limit, String lastEvaluatedKeyId, String searchKeyword);
 
   List<Question> findAll(String projectId);
+
+  List<Question> findRandomQuestions(String projectId, int amount);
 
   long countByProjectId(String projectId);
 }
