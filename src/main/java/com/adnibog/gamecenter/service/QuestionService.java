@@ -190,20 +190,20 @@ public class QuestionService {
       List<String> options = new ArrayList<>();
 
       if ("field2".equalsIgnoreCase(mainField)) {
-        options.add(q.getField2());
-        for (int i = 0; i < 3 && i < distractors.size(); i++) {
-          options.add(distractors.get(i).getField2());
-        }
-      } else {
         options.add(q.getField1());
         for (int i = 0; i < 3 && i < distractors.size(); i++) {
           options.add(distractors.get(i).getField1());
+        }
+      } else {
+        options.add(q.getField2());
+        for (int i = 0; i < 3 && i < distractors.size(); i++) {
+          options.add(distractors.get(i).getField2());
         }
       }
 
       Collections.shuffle(options);
       QuizQuestion qq = new QuizQuestion();
-      qq.setAnswer("field2".equalsIgnoreCase(mainField) ? q.getField2() : q.getField1());
+      qq.setAnswer("field2".equalsIgnoreCase(mainField) ? q.getField1() : q.getField2());
       qq.setField1(q.getField1());
       qq.setField2(q.getField2());
       qq.setField3(q.getField3());
