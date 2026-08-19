@@ -3,6 +3,7 @@ package com.adnibog.gamecenter.dto.response;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,6 +18,7 @@ import java.util.Map;
 @Builder
 @JsonIgnoreProperties({"field1", "field2", "field3", "projects"})
 public class QuizQuestion {
+  @JsonIgnore
   private String answer;
   private List<String> options;
 
@@ -39,5 +41,43 @@ public class QuizQuestion {
       if (field3 != null) map.put(projects.getField3Label(), field3);
     }
     return map;
+  }
+
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class LabeledField {
+    private String label;
+    private String value;
+  }
+
+  @JsonProperty("prompt")
+  public LabeledField getPrompt() {
+    if (projects != null) {
+      if ("field2".equals(projects.getMainQuestionField())) {
+        return new LabeledField(projects.getField2Label(), field2);
+      }
+      return new LabeledField(projects.getField1Label(), field1);
+    }
+    return new LabeledField("Question", field1);
+  }
+
+  @JsonProperty("answer")
+  public LabeledField getAnswerField() {
+    if (projects != null) {
+      if ("field2".equals(projects.getMainQuestionField())) {
+        return new LabeledField(projects.getField1Label(), field1);
+      }
+      return new LabeledField(projects.getField2Label(), field2);
+    }
+    return new LabeledField("Answer", answer);
+  }
+
+  @JsonProperty("hint")
+  public LabeledField getHint() {
+    if (projects != null && field3 != null && !field3.isEmpty()) {
+      return new LabeledField(projects.getField3Label(), field3);
+    }
+    return null;
   }
 }

@@ -59,6 +59,13 @@ public class ProjectController {
     return ResponseEntity.ok(ApiResponse.success(projects));
   }
 
+  @Operation(summary = "Get Project", description = "Retrieves a project by its ID.")
+  @GetMapping("/{id}")
+  public ResponseEntity<ApiResponse<ProjectDto>> getProject(@PathVariable String id) {
+    ProjectDto project = projectService.getProjectById(id);
+    return ResponseEntity.ok(ApiResponse.success(project));
+  }
+
   @Operation(summary = "Update Project", description = "Updates a project's settings.")
   @PutMapping("/{id}")
   public ResponseEntity<ApiResponse<ProjectDto>> updateProject(
