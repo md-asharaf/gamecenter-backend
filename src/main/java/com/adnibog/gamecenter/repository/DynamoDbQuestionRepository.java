@@ -124,4 +124,10 @@ public class DynamoDbQuestionRepository implements QuestionRepository {
 
     return new QuestionPage(resultItems, nextKey);
   }
+
+  @Override
+  public long countByProjectId(String projectId) {
+    QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(projectId).build());
+    return questionTable.query(conditional).items().stream().count();
+  }
 }

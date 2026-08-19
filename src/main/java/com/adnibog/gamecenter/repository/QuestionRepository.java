@@ -17,4 +17,6 @@ public interface QuestionRepository {
   QuestionPage findQuestions(String projectId, int limit, String lastEvaluatedKeyId, String searchKeyword);
 
   List<Question> findAll(String projectId);
+
+  long countByProjectId(String projectId);
 }

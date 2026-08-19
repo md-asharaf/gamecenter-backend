@@ -40,10 +40,6 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
     String adminId = claims.getSubject();
     request.setAttribute("adminId", adminId);
 
-    // /admins/me is accessible to any authenticated admin (they fetch their own
-    // profile).
-    // All other /admins/** operations (list, create, update, delete) require
-    // SUPER_ADMIN.
     String uri = request.getRequestURI();
     if (uri.startsWith("/admins") && !uri.startsWith("/admins/me")) {
       var admin = userService.getUserEntityById(adminId);
