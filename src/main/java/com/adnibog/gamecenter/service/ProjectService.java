@@ -45,7 +45,7 @@ public class ProjectService {
 
   public Project getProjectEntityById(String projectId) {
     return projectRepository.findById(projectId)
-        .orElseThrow(() -> new NotFoundException("Project not found"));
+        .orElseThrow(() -> new NotFoundException("Project not found."));
   }
 
   public ProjectDto getProjectById(String projectId) {
@@ -57,11 +57,11 @@ public class ProjectService {
 
     if (admin.getRole() != Role.SUPER_ADMIN) {
       log.warn("Admin {} attempted to create a project but is not a SUPER_ADMIN", adminId);
-      throw new ForbiddenException("Only Super Admin can create a new project");
+      throw new ForbiddenException("Insufficient privileges to create a project.");
     }
 
     if (req != null && req.getName() != null && projectRepository.findByName(req.getName()).isPresent()) {
-      throw new ConflictException("A project with this name already exists");
+      throw new ConflictException("Project name is already in use.");
     }
 
     String id = UUID.randomUUID().toString();
@@ -135,7 +135,7 @@ public class ProjectService {
         projectRepository.findByName(req.getName())
             .filter(other -> !other.getId().equals(project.getId()))
             .ifPresent(other -> {
-              throw new ConflictException("A project with this name already exists");
+              throw new ConflictException("Project name is already in use.");
             });
       }
       project.setName(req.getName());
@@ -150,7 +150,7 @@ public class ProjectService {
       } else {
         log.warn("Update project {} failed: main question label '{}' does not match any existing fields", projectId,
             req.getMainQuestionLabel());
-        throw new BadRequestException("The main question label must match either the first or second field label");
+        throw new BadRequestException("Main question label must match a defined field label.");
       }
     }
     if (req.getField1Label() != null) {
@@ -175,7 +175,7 @@ public class ProjectService {
 
     if (admin.getRole() != Role.SUPER_ADMIN) {
       log.warn("Admin {} attempted to delete project {} but is not a SUPER_ADMIN", adminId, projectId);
-      throw new ForbiddenException("Only Super Admin can delete a project");
+      throw new ForbiddenException("Insufficient privileges to delete a project.");
     }
 
     getProjectEntityById(projectId);

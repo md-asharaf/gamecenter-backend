@@ -45,7 +45,7 @@ public class ProjectController {
       @RequestAttribute("adminId") String adminId,
       @RequestBody(required = false) CreateProjectRequest req) {
     ProjectDto project = projectService.createProject(adminId, req);
-    return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(project, "Project created successfully"));
+    return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(project, "Project created successfully."));
   }
 
   @Operation(summary = "List Projects", description = "Lists all projects accessible to the current admin.")
@@ -65,7 +65,7 @@ public class ProjectController {
       @PathVariable String id,
       @Valid @RequestBody UpdateProjectRequest req) {
     ProjectDto updated = projectService.updateProject(id, req);
-    return ResponseEntity.ok(ApiResponse.success(updated, "Project updated successfully"));
+    return ResponseEntity.ok(ApiResponse.success(updated, "Project updated successfully."));
   }
 
   @Operation(summary = "Delete Project", description = "Deletes a project and its questions. Requires SUPER_ADMIN role.")
@@ -74,6 +74,6 @@ public class ProjectController {
       @RequestAttribute("adminId") String adminId, 
       @PathVariable String id) {
     projectService.deleteProject(adminId, id);
-    return ResponseEntity.ok(ApiResponse.success(null, "Project deleted successfully"));
+    return ResponseEntity.ok(ApiResponse.success(null, "Project deleted successfully."));
   }
 }

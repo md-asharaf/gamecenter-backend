@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 public class ChangePasswordRequest {
-  @NotBlank(message = "Password is required")
-  @Size(min = 6, message = "Password must be at least 6 characters")
+  @NotBlank(message = "Password is required.")
+  @Size(min = 6, message = "Password length must be at least 6 characters.")
   private String password;
 }

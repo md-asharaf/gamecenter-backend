@@ -9,8 +9,8 @@ public class UpdateProjectRequest {
 
   private String name;
 
-  @Min(value = 1, message = "The number of questions in a quiz must be at least 1")
-  @Max(value = 100, message = "The number of questions in a quiz must be at most 100")
+  @Min(value = 1, message = "Quiz must contain at least 1 question.")
+  @Max(value = 100, message = "Quiz cannot exceed 100 questions.")
   private Integer numberOfQuestionsInQuiz;
 
   private String mainQuestionLabel;

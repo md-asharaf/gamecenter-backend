@@ -35,7 +35,7 @@ public class AdminController {
   @PostMapping
   public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterAdminRequest req) {
     userService.createAdmin(req.getEmail(), req.getPassword(), req.getProjectIds());
-    return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null, "Admin created successfully"));
+    return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null, "Sub-admin created successfully."));
   }
 
   @Operation(summary = "Get Current Admin", description = "Returns the profile of the currently authenticated admin. Accessible to all admin roles.")
@@ -51,27 +51,31 @@ public class AdminController {
       @RequestAttribute("adminId") String currentAdminId,
       @Valid @RequestBody ChangePasswordRequest req) {
     userService.updatePassword(currentAdminId, req.getPassword());
-    return ResponseEntity.ok(ApiResponse.success(null, "Password updated successfully"));
+    return ResponseEntity.ok(ApiResponse.success(null, "Password updated successfully."));
   }
 
   @Operation(summary = "List Admins", description = "Returns a paginated list of all admins. Requires SUPER_ADMIN role.")
   @GetMapping
   public ResponseEntity<ApiResponse<UserPageResponse>> listAdmins(
+      @RequestAttribute("adminId") String currentAdminId,
       @RequestParam(defaultValue = "10") int limit,
       @RequestParam(required = false) String lastEvaluatedKey,
       @RequestParam(required = false) String search) {
-    UserPageResponse admins = userService.getAllAdmins(limit, lastEvaluatedKey, search);
+    UserPageResponse admins = userService.getAllAdmins(currentAdminId, limit, lastEvaluatedKey, search);
     return ResponseEntity.ok(ApiResponse.success(admins));
   }
 
   @Operation(summary = "Update Admin", description = "Updates an admin's email, password, or project access. Requires SUPER_ADMIN role.")
   @PutMapping("/{id}")
   public ResponseEntity<ApiResponse<UserDto>> updateAdmin(
+      @RequestAttribute("adminId") String currentAdminId,
       @PathVariable String id,
       @Valid @RequestBody UpdateAdminRequest req) {
-    UserDto updatedUser = userService.updateAdmin(id, req.getEmail(), req.getPassword(), req.getProjectIds());
-    return ResponseEntity.ok(ApiResponse.success(updatedUser, "Admin updated successfully"));
+    UserDto updatedUser = userService.updateAdmin(currentAdminId, id, req.getEmail(), req.getPassword(),
+        req.getProjectIds());
+    return ResponseEntity.ok(ApiResponse.success(updatedUser, "Sub-admin updated successfully."));
   }
+        
 
   @Operation(summary = "Delete Admin", description = "Deletes an admin by ID. Cannot delete yourself. Requires SUPER_ADMIN role.")
   @DeleteMapping("/{id}")

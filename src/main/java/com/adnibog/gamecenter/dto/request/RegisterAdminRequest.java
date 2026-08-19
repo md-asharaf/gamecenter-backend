@@ -12,12 +12,12 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RegisterAdminRequest {
-  @NotBlank(message = "Email is required")
-  @Email(message = "Email must be a valid email address")
+  @NotBlank(message = "Email is required.")
+  @Email(message = "Invalid email format.")
   private String email;
 
-  @NotBlank(message = "Password is required")
-  @Size(min = 8, max = 128, message = "Password must be between 8 and 128 characters")
+  @NotBlank(message = "Password is required.")
+  @Size(min = 8, max = 128, message = "Password length must be between 8 and 128 characters.")
   private String password;
 
   private Set<String> projectIds;

@@ -55,7 +55,7 @@ public class QuestionService {
   public QuestionDto getQuestionById(String projectId, String id) {
     ProjectDto project = projectService.getProjectById(projectId);
     Question q = questionRepository.findById(projectId, id)
-        .orElseThrow(() -> new NotFoundException("Question not found"));
+        .orElseThrow(() -> new NotFoundException("Question not found."));
     return questionMapper.toDto(q, project);
   }
 
@@ -109,7 +109,7 @@ public class QuestionService {
   public QuestionDto updateQuestion(String projectId, String id, UpdateQuestionRequest req) {
     ProjectDto project = projectService.getProjectById(projectId);
     Question existing = questionRepository.findById(projectId, id)
-        .orElseThrow(() -> new NotFoundException("Question not found"));
+        .orElseThrow(() -> new NotFoundException("Question not found."));
 
     Map<String, String> dynamicFields = req.getDynamicFields();
 
@@ -140,7 +140,7 @@ public class QuestionService {
 
   public void deleteQuestion(String projectId, String id) {
     questionRepository.findById(projectId, id)
-        .orElseThrow(() -> new NotFoundException("Question not found"));
+        .orElseThrow(() -> new NotFoundException("Question not found."));
     questionRepository.deleteById(projectId, id);
     log.info("Deleted question {} in project {}", id, projectId);
   }

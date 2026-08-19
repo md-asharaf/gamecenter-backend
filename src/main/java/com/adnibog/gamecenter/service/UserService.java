@@ -36,7 +36,7 @@ public class UserService {
   }
 
   public User getUserEntityById(String id) {
-    return userRepository.findById(id).orElseThrow(() -> new NotFoundException("Admin not found"));
+    return userRepository.findById(id).orElseThrow(() -> new NotFoundException("Sub-admin not found."));
   }
 
   public UserDto getAdminById(String id) {
@@ -55,23 +55,30 @@ public class UserService {
     userRepository.save(user);
   }
 
-  public UserPageResponse getAllAdmins(int limit, String lastEvaluatedKey, String search) {
+  public UserPageResponse getAllAdmins(String currentAdminId, int limit, String lastEvaluatedKey, String search) {
     UserPage page = userRepository.findUsers(limit, lastEvaluatedKey, search);
     List<UserDto> dtos = page.getItems().stream()
+        .filter(user -> !user.getId().equals(currentAdminId))
         .map(userMapper::toDto)
         .collect(Collectors.toList());
     return new UserPageResponse(dtos, page.getLastEvaluatedKey());
   }
 
-  public UserDto updateAdmin(String id, String email, String password, Set<String> projectIds) {
+  public UserDto updateAdmin(String currentAdminId, String id, String email, String password, Set<String> projectIds) {
+    if (currentAdminId.equals(id)) {
+        throw new BadRequestException("Use the /me endpoint to update your own profile");
+    }
     User user = userRepository.findById(id)
-        .orElseThrow(() -> new NotFoundException("Admin not found"));
+        .orElseThrow(() -> new NotFoundException("Sub-admin not found."));
+    if (user.getRole() == Role.SUPER_ADMIN) {
+        throw new com.adnibog.gamecenter.exception.ForbiddenException("Modification of another Super Admin is prohibited.");
+    }
 
     if (email != null && !email.isBlank()) {
       String newEmail = email.toLowerCase();
       if (!newEmail.equals(user.getEmail())) {
         if (userRepository.findByEmail(newEmail).isPresent()) {
-          throw new ConflictException("An admin with this email already exists");
+          throw new ConflictException("Email is already in use.");
         }
         user.setEmail(newEmail);
       }
@@ -93,23 +100,26 @@ public class UserService {
 
   public void updatePassword(String id, String newPassword) {
     User user = userRepository.findById(id)
-        .orElseThrow(() -> new NotFoundException("Admin not found"));
+        .orElseThrow(() -> new NotFoundException("Sub-admin not found."));
     user.setPasswordHash(passwordEncoder.encode(newPassword));
     user.setUpdatedAt(System.currentTimeMillis());
     userRepository.save(user);
   }
   public void deleteAdmin(String currentAdminId, String id) {
     if (currentAdminId.equals(id)) {
-      throw new BadRequestException("Cannot delete yourself");
+      throw new BadRequestException("Self-deletion is not permitted.");
     }
-    userRepository.findById(id)
-        .orElseThrow(() -> new NotFoundException("Admin not found"));
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new NotFoundException("Sub-admin not found."));
+    if (user.getRole() == Role.SUPER_ADMIN) {
+        throw new com.adnibog.gamecenter.exception.ForbiddenException("Deletion of another Super Admin is prohibited.");
+    }
     userRepository.deleteById(id);
   }
 
   public void createAdmin(String email, String password, Set<String> projectIds) {
     if (userRepository.findByEmail(email).isPresent()) {
-      throw new ConflictException("An admin user with this email already exists");
+      throw new ConflictException("Email is already in use.");
     }
 
     final long now = System.currentTimeMillis();

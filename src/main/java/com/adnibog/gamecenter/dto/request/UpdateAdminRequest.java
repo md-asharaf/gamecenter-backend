@@ -16,7 +16,7 @@ public class UpdateAdminRequest {
   private String password;
   private Set<String> projectIds;
 
-  @AssertTrue(message = "Please provide at least one detail to update")
+  @AssertTrue(message = "At least one update field is required.")
   public boolean isAtLeastOneFieldProvided() {
     return (email != null && !email.isBlank()) || 
            (password != null && !password.isBlank()) ||
