@@ -15,6 +15,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.BatchWriteItemEnhancedRequ
 import software.amazon.awssdk.enhanced.dynamodb.model.BatchWriteResult;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,14 +25,18 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+
 @Repository
 public class DynamoDbQuestionRepository implements QuestionRepository {
 
   private final DynamoDbTable<Question> questionTable;
   private final DynamoDbEnhancedClient enhancedClient;
+  private final DynamoDbClient dynamoDbClient;
 
-  public DynamoDbQuestionRepository(final DynamoDbEnhancedClient enhancedClient) {
+  public DynamoDbQuestionRepository(final DynamoDbEnhancedClient enhancedClient, final DynamoDbClient dynamoDbClient) {
     this.enhancedClient = enhancedClient;
+    this.dynamoDbClient = dynamoDbClient;
     this.questionTable = enhancedClient.table("Questions", TableSchema.fromBean(Question.class));
   }
 
@@ -189,7 +194,13 @@ public class DynamoDbQuestionRepository implements QuestionRepository {
 
   @Override
   public long countByProjectId(String projectId) {
-    QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(projectId).build());
-    return questionTable.query(conditional).items().stream().count();
+    QueryRequest queryRequest = QueryRequest
+        .builder()
+        .tableName("Questions")
+        .keyConditionExpression("projectId = :v_id")
+        .expressionAttributeValues(Map.of(":v_id", AttributeValue.builder().s(projectId).build()))
+        .select(software.amazon.awssdk.services.dynamodb.model.Select.COUNT)
+        .build();
+    return dynamoDbClient.query(queryRequest).count();
   }
 }

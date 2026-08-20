@@ -9,6 +9,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -127,6 +128,7 @@ class ProjectServiceTest {
   }
 
   @Test
+  @SuppressWarnings("null")
   void deleteProject_SuperAdmin_Success() {
     User admin = new User();
     admin.setId("admin1");
@@ -140,7 +142,8 @@ class ProjectServiceTest {
 
     projectService.deleteProject("admin1", "proj1");
 
-    verify(eventPublisher).publishEvent(ProjectDeletedEvent.class);
+    ArgumentCaptor<ProjectDeletedEvent> captor = ArgumentCaptor.forClass(ProjectDeletedEvent.class);
+    verify(eventPublisher).publishEvent(captor.capture());
     verify(projectRepository).deleteById("proj1");
     verify(userService).removeProjectFromAllAdmins("proj1");
   }

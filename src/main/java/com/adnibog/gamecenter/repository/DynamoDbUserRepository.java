@@ -10,7 +10,12 @@ import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
+import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
+import software.amazon.awssdk.services.dynamodb.model.Select;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,15 +28,18 @@ import java.util.Optional;
 public class DynamoDbUserRepository implements UserRepository {
 
   private final DynamoDbTable<User> userTable;
+  private final DynamoDbClient dynamoDbClient;
 
-  public DynamoDbUserRepository(final DynamoDbEnhancedClient enhancedClient) {
+  public DynamoDbUserRepository(final DynamoDbEnhancedClient enhancedClient, final DynamoDbClient dynamoDbClient) {
     this.userTable = enhancedClient.table("Users", TableSchema.fromBean(User.class));
+    this.dynamoDbClient = dynamoDbClient;
   }
 
   @Override
   public Optional<User> findByEmail(String email) {
-    return userTable.scan().items().stream()
-        .filter(u -> u.getEmail().equalsIgnoreCase(email))
+    QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(email).build());
+    return userTable.index("email-index").query(conditional).stream()
+        .flatMap(page -> page.items().stream())
         .findFirst();
   }
 
@@ -48,6 +56,23 @@ public class DynamoDbUserRepository implements UserRepository {
   @Override
   public java.util.List<User> findAll() {
     return new java.util.ArrayList<>(userTable.scan().items().stream().toList());
+  }
+
+  @Override
+  public long countAll() {
+    long totalCount = 0;
+    Map<String, AttributeValue> lastEvaluatedKey = null;
+    do {
+      ScanRequest scanRequest = ScanRequest.builder()
+          .tableName("Users")
+          .select(Select.COUNT)
+          .exclusiveStartKey(lastEvaluatedKey)
+          .build();
+      ScanResponse response = dynamoDbClient.scan(scanRequest);
+      totalCount += response.count();
+      lastEvaluatedKey = response.lastEvaluatedKey();
+    } while (lastEvaluatedKey != null && !lastEvaluatedKey.isEmpty());
+    return totalCount;
   }
 
   @Override

@@ -1,5 +1,6 @@
 package com.adnibog.gamecenter.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.adnibog.gamecenter.entity.User;
@@ -11,7 +12,9 @@ public interface UserRepository {
 
   void save(User user);
 
-  java.util.List<User> findAll();
+  List<User> findAll();
+
+  long countAll();
 
   void deleteById(String id);
 

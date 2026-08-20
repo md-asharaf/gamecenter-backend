@@ -10,6 +10,7 @@ import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.util.ArrayList;
@@ -36,8 +37,9 @@ public class DynamoDbProjectRepository implements ProjectRepository {
 
   @Override
   public Optional<Project> findByName(String name) {
-    return projectTable.scan().items().stream()
-        .filter(u -> u.getName().equalsIgnoreCase(name))
+    QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(name).build());
+    return projectTable.index("name-index").query(conditional).stream()
+        .flatMap(page -> page.items().stream())
         .findFirst();
   }
 

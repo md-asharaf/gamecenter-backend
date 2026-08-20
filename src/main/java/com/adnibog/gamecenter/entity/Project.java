@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
 
 @Data
 @NoArgsConstructor
@@ -26,5 +27,10 @@ public class Project {
   @DynamoDbPartitionKey
   public String getId() {
     return id;
+  }
+
+  @DynamoDbSecondaryPartitionKey(indexNames = "name-index")
+  public String getName() {
+    return name;
   }
 }

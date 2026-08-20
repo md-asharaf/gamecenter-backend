@@ -65,7 +65,7 @@ public class UserService {
   }
 
   public int getTotalAdminCount() {
-    return userRepository.findAll().size();
+    return (int) userRepository.countAll();
   }
 
   public UserDto updateAdmin(String currentAdminId, String id, String email, String password, Set<String> projectIds) {
