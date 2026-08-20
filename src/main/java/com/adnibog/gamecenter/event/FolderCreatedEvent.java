@@ -1,19 +1,18 @@
 package com.adnibog.gamecenter.event;
 
 import org.springframework.context.ApplicationEvent;
-
 import lombok.Getter;
 
 @Getter
-public class FolderDeletedEvent extends ApplicationEvent {
+public class FolderCreatedEvent extends ApplicationEvent {
     private final String projectId;
     private final String folderId;
-    private final boolean isLastFolder;
+    private final boolean isFirstFolder;
 
-    public FolderDeletedEvent(Object source, String projectId, String folderId, boolean isLastFolder) {
+    public FolderCreatedEvent(Object source, String projectId, String folderId, boolean isFirstFolder) {
         super(source);
         this.projectId = projectId;
         this.folderId = folderId;
-        this.isLastFolder = isLastFolder;
+        this.isFirstFolder = isFirstFolder;
     }
 }

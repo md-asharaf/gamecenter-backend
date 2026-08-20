@@ -17,6 +17,9 @@ import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.ProjectMapper;
 import com.adnibog.gamecenter.repository.ProjectRepository;
 import org.springframework.context.ApplicationEventPublisher;
+
+import com.adnibog.gamecenter.event.FolderCreatedEvent;
+import com.adnibog.gamecenter.event.FolderDeletedEvent;
 import com.adnibog.gamecenter.event.ProjectDeletedEvent;
 
 import java.util.ArrayList;
@@ -100,9 +103,7 @@ public class ProjectService {
     project.setUpdatedAt(now);
 
     projectRepository.save(project);
-    eventPublisher.publishEvent(new com.adnibog.gamecenter.event.ProjectCreatedEvent(this, id));
-
-    userService.addProjectToAdmin(adminId, id);
+    eventPublisher.publishEvent(new com.adnibog.gamecenter.event.ProjectCreatedEvent(this, id, adminId));
 
     log.info("Project '{}' ({}) successfully created by Admin {}", project.getName(), id, adminId);
     return projectMapper.toDto(project);
@@ -145,7 +146,6 @@ public class ProjectService {
 
     return new ProjectPageResponse(paged, nextKey);
   }
-
 
   public List<ProjectDto> getMostRecentProjectsForAdmin(String adminId, int limit) {
     User admin = userService.getUserEntityById(adminId);
@@ -237,6 +237,29 @@ public class ProjectService {
     project.setQuizFolderId(folderId);
     project.setUpdatedAt(System.currentTimeMillis());
     projectRepository.save(project);
+  }
+
+  @org.springframework.context.event.EventListener
+  public void handleFolderCreated(FolderCreatedEvent event) {
+    if (event.isFirstFolder()) {
+      updateQuizFolderId(event.getProjectId(), event.getFolderId());
+      log.info("Set default quiz folder for project {} to newly created folder {}", event.getProjectId(),
+          event.getFolderId());
+    }
+  }
+
+  @org.springframework.context.event.EventListener
+  public void handleFolderDeleted(FolderDeletedEvent event) {
+    if (event.isLastFolder()) {
+      updateQuizFolderId(event.getProjectId(), null);
+      log.info("Unset quiz folder for project {} as the last folder was deleted", event.getProjectId());
+    } else {
+      Project project = projectRepository.findById(event.getProjectId()).orElse(null);
+      if (project != null && event.getFolderId().equals(project.getQuizFolderId())) {
+        updateQuizFolderId(event.getProjectId(), null);
+        log.info("Unset quiz folder for project {} because the active quiz folder was deleted", event.getProjectId());
+      }
+    }
   }
 
   public void deleteProject(String adminId, String projectId) {

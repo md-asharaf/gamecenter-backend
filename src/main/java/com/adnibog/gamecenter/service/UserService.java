@@ -20,6 +20,8 @@ import com.adnibog.gamecenter.mapper.UserMapper;
 import com.adnibog.gamecenter.repository.UserRepository;
 import java.util.Optional;
 import org.springframework.context.event.EventListener;
+
+import com.adnibog.gamecenter.event.ProjectCreatedEvent;
 import com.adnibog.gamecenter.event.ProjectDeletedEvent;
 
 import java.util.HashSet;
@@ -34,16 +36,17 @@ import java.util.stream.Collectors;
 public class UserService {
 
   private final UserRepository userRepository;
-  private final AppStatsService appStatsService;
   private final PasswordEncoder passwordEncoder;
   private final UserMapper userMapper;
+  private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
-  public UserService(UserRepository userRepository, AppStatsService appStatsService,
-      PasswordEncoder passwordEncoder, UserMapper userMapper) {
+  public UserService(UserRepository userRepository,
+      PasswordEncoder passwordEncoder, UserMapper userMapper,
+      org.springframework.context.ApplicationEventPublisher eventPublisher) {
     this.userRepository = userRepository;
-    this.appStatsService = appStatsService;
     this.passwordEncoder = passwordEncoder;
     this.userMapper = userMapper;
+    this.eventPublisher = eventPublisher;
   }
 
   public User getUserEntityById(String id) {
@@ -73,10 +76,6 @@ public class UserService {
         .map(userMapper::toDto)
         .collect(Collectors.toList());
     return new UserPageResponse(dtos, page.getLastEvaluatedKey());
-  }
-
-  public int getTotalAdminCount() {
-    return (int) appStatsService.getTotalAdmins();
   }
 
   public UserDto updateAdmin(String currentAdminId, String id, UpdateAdminRequest req) {
@@ -140,7 +139,7 @@ public class UserService {
       throw new ForbiddenException("Deletion of another Super Admin is prohibited.");
     }
     userRepository.deleteById(id);
-    appStatsService.decrementTotalAdmins();
+    eventPublisher.publishEvent(new com.adnibog.gamecenter.event.AdminDeletedEvent(this, id));
   }
 
   public void createAdmin(RegisterAdminRequest req) {
@@ -164,7 +163,7 @@ public class UserService {
         .build();
 
     userRepository.save(user);
-    appStatsService.incrementTotalAdmins();
+    eventPublisher.publishEvent(new com.adnibog.gamecenter.event.AdminCreatedEvent(this, user.getId()));
   }
 
   public void addProjectToAdmin(String adminId, String projectId) {
@@ -187,5 +186,12 @@ public class UserService {
   public void handleProjectDeletedEvent(ProjectDeletedEvent event) {
     log.info("Handling ProjectDeletedEvent in UserService for project {}", event.getProjectId());
     removeProjectFromAllAdmins(event.getProjectId());
+  }
+
+  @EventListener
+  public void handleProjectCreatedEvent(ProjectCreatedEvent event) {
+    log.info("Handling ProjectCreatedEvent in UserService for project {} and admin {}", event.getProjectId(),
+        event.getAdminId());
+    addProjectToAdmin(event.getAdminId(), event.getProjectId());
   }
 }

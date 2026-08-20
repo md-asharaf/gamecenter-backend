@@ -68,9 +68,7 @@ public class FolderService {
 
     folderRepository.save(folder);
 
-    if (isFirstFolder) {
-      projectService.updateQuizFolderId(projectId, folder.getId());
-    }
+    eventPublisher.publishEvent(new com.adnibog.gamecenter.event.FolderCreatedEvent(this, projectId, folder.getId(), isFirstFolder));
 
     return folderMapper.toDto(folder);
   }
@@ -96,19 +94,16 @@ public class FolderService {
     folderRepository.findById(projectId, folderId)
         .orElseThrow(() -> new NotFoundException("Folder not found"));
 
-    eventPublisher.publishEvent(new FolderDeletedEvent(this, projectId, folderId));
     folderRepository.deleteById(projectId, folderId);
-
-    if (!folderRepository.hasAnyFolders(projectId)) {
-      projectService.updateQuizFolderId(projectId, null);
-    }
+    boolean isLastFolder = !folderRepository.hasAnyFolders(projectId);
+    eventPublisher.publishEvent(new FolderDeletedEvent(this, projectId, folderId, isLastFolder));
   }
 
   public void emptyFolder(String projectId, String folderId) {
     folderRepository.findById(projectId, folderId)
         .orElseThrow(() -> new NotFoundException("Folder not found"));
 
-    eventPublisher.publishEvent(new FolderDeletedEvent(this, projectId, folderId));
+    eventPublisher.publishEvent(new FolderDeletedEvent(this, projectId, folderId, false));
   }
 
   public FolderDto getFolderById(String projectId, String folderId) {
