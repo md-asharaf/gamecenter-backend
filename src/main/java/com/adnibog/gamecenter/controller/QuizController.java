@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.adnibog.gamecenter.dto.response.ApiResponse;
 import com.adnibog.gamecenter.dto.response.QuizQuestion;
-import com.adnibog.gamecenter.service.QuestionService;
+import com.adnibog.gamecenter.service.QuizService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,17 +17,17 @@ import java.util.List;
 @RequestMapping("/projects/{projectId}/quiz")
 public class QuizController {
 
-  private final QuestionService questionService;
+  private final QuizService quizService;
 
-  public QuizController(QuestionService questionService) {
-    this.questionService = questionService;
+  public QuizController(QuizService quizService) {
+    this.quizService = quizService;
   }
 
   @Operation(summary = "Generate Quiz", description = "Generates a randomized set of questions for a given project. Requires admin authentication and project access.")
   @GetMapping
   public ResponseEntity<ApiResponse<List<QuizQuestion>>> generateQuiz(
       @PathVariable String projectId) {
-    List<QuizQuestion> quiz = questionService.generateQuiz(projectId);
+    List<QuizQuestion> quiz = quizService.generateQuiz(projectId);
     return ResponseEntity.ok(ApiResponse.success(quiz));
   }
 }

@@ -5,9 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -21,7 +19,6 @@ import com.adnibog.gamecenter.dto.request.CreateQuestionRequest;
 import com.adnibog.gamecenter.dto.request.UpdateQuestionRequest;
 import com.adnibog.gamecenter.dto.response.ProjectDto;
 import com.adnibog.gamecenter.dto.response.QuestionDto;
-import com.adnibog.gamecenter.entity.Project;
 import com.adnibog.gamecenter.entity.Question;
 import com.adnibog.gamecenter.exception.BadRequestException;
 import com.adnibog.gamecenter.mapper.ProjectMapper;
@@ -125,22 +122,4 @@ class QuestionServiceTest {
     verify(questionRepository).save(existing);
   }
 
-  @Test
-  void generateQuiz_NotEnoughQuestions() {
-    String projectId = "proj1";
-
-    Project project = new Project();
-    project.setNumberOfQuestionsInQuiz(10);
-
-    when(projectService.getProjectEntityById(projectId)).thenReturn(project);
-    when(projectMapper.toDto(project)).thenReturn(new ProjectDto());
-
-    List<Question> questions = new ArrayList<>();
-    for (int i = 0; i < 5; i++) {
-      questions.add(new Question());
-    }
-    when(questionRepository.findRandomQuestions(eq(projectId), anyInt())).thenReturn(questions);
-
-    assertThrows(BadRequestException.class, () -> questionService.generateQuiz(projectId));
-  }
 }

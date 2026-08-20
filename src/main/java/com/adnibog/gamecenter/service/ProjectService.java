@@ -15,7 +15,8 @@ import com.adnibog.gamecenter.exception.ConflictException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.ProjectMapper;
 import com.adnibog.gamecenter.repository.ProjectRepository;
-import com.adnibog.gamecenter.repository.QuestionRepository;
+import org.springframework.context.ApplicationEventPublisher;
+import com.adnibog.gamecenter.event.ProjectDeletedEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,16 +32,17 @@ import lombok.extern.slf4j.Slf4j;
 public class ProjectService {
 
   private final ProjectRepository projectRepository;
-  private final QuestionRepository questionRepository;
   private final UserService userService;
   private final ProjectMapper projectMapper;
+  private final ApplicationEventPublisher eventPublisher;
 
-  public ProjectService(ProjectRepository projectRepository, QuestionRepository questionRepository,
-      UserService userService, ProjectMapper projectMapper) {
+  public ProjectService(ProjectRepository projectRepository,
+      UserService userService, ProjectMapper projectMapper,
+      ApplicationEventPublisher eventPublisher) {
     this.projectRepository = projectRepository;
-    this.questionRepository = questionRepository;
     this.userService = userService;
     this.projectMapper = projectMapper;
+    this.eventPublisher = eventPublisher;
   }
 
   private void validateFieldLabel(String label) {
@@ -139,6 +141,21 @@ public class ProjectService {
     return new ProjectPageResponse(paged, nextKey);
   }
 
+  public List<ProjectDto> getAllProjectsForAdmin(String adminId) {
+    User admin = userService.getUserEntityById(adminId);
+    if (admin.getRole() == Role.SUPER_ADMIN) {
+      return projectRepository.findAll().stream().map(projectMapper::toDto).collect(Collectors.toList());
+    }
+    if (admin.getProjectIds() == null || admin.getProjectIds().isEmpty()) {
+      return new ArrayList<>();
+    }
+    return admin.getProjectIds().stream()
+        .map(projectId -> projectRepository.findById(projectId).orElse(null))
+        .filter(project -> project != null)
+        .map(projectMapper::toDto)
+        .collect(Collectors.toList());
+  }
+
   public ProjectDto updateProject(String projectId, UpdateProjectRequest req) {
     Project project = getProjectEntityById(projectId);
 
@@ -198,7 +215,7 @@ public class ProjectService {
 
     getProjectEntityById(projectId);
 
-    questionRepository.deleteAllByProjectId(projectId);
+    eventPublisher.publishEvent(new ProjectDeletedEvent(this, projectId));
     projectRepository.deleteById(projectId);
     userService.removeProjectFromAllAdmins(projectId);
 

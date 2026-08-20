@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import com.adnibog.gamecenter.dto.response.ApiResponse;
 import com.adnibog.gamecenter.dto.response.UploadUrlResponse;
+import com.adnibog.gamecenter.dto.response.UploadJobDto;
 import com.adnibog.gamecenter.service.StorageService;
 import com.adnibog.gamecenter.entity.UploadJob;
 import com.adnibog.gamecenter.service.UploadJobService;
@@ -44,13 +45,14 @@ public class UploadController {
   
   @Operation(summary = "Get Upload Status", description = "Gets the status of a bulk upload job.")
   @GetMapping("/{key}/status")
-  public ResponseEntity<ApiResponse<UploadJob>> getUploadStatus(
+  public ResponseEntity<ApiResponse<UploadJobDto>> getUploadStatus(
       @PathVariable String projectId,
       @PathVariable String key) {
       
     String fullKey = projectId + "/" + key;
     UploadJob job = uploadJobService.getJob(fullKey)
         .orElseThrow(() -> new NotFoundException("Upload job not found for key: " + fullKey));
-    return ResponseEntity.ok(ApiResponse.success(job));
+    UploadJobDto dto = new UploadJobDto(job.getId(), job.getProjectId(), job.getStatus(), job.getErrorMessage());
+    return ResponseEntity.ok(ApiResponse.success(dto));
   }
 }

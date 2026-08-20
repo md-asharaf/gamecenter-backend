@@ -23,7 +23,9 @@ import com.adnibog.gamecenter.exception.ForbiddenException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.ProjectMapper;
 import com.adnibog.gamecenter.repository.ProjectRepository;
-import com.adnibog.gamecenter.repository.QuestionRepository;
+
+import org.springframework.context.ApplicationEventPublisher;
+import com.adnibog.gamecenter.event.ProjectDeletedEvent;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectServiceTest {
@@ -32,7 +34,7 @@ class ProjectServiceTest {
   private ProjectRepository projectRepository;
 
   @Mock
-  private QuestionRepository questionRepository;
+  private ApplicationEventPublisher eventPublisher;
 
   @Mock
   private UserService userService;
@@ -44,7 +46,7 @@ class ProjectServiceTest {
 
   @BeforeEach
   void setUp() {
-    projectService = new ProjectService(projectRepository, questionRepository, userService, projectMapper);
+    projectService = new ProjectService(projectRepository, userService, projectMapper, eventPublisher);
   }
 
   @Test
@@ -138,7 +140,7 @@ class ProjectServiceTest {
 
     projectService.deleteProject("admin1", "proj1");
 
-    verify(questionRepository).deleteAllByProjectId("proj1");
+    verify(eventPublisher).publishEvent(ProjectDeletedEvent.class);
     verify(projectRepository).deleteById("proj1");
     verify(userService).removeProjectFromAllAdmins("proj1");
   }

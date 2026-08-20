@@ -64,6 +64,10 @@ public class UserService {
     return new UserPageResponse(dtos, page.getLastEvaluatedKey());
   }
 
+  public int getTotalAdminCount() {
+    return userRepository.findAll().size();
+  }
+
   public UserDto updateAdmin(String currentAdminId, String id, String email, String password, Set<String> projectIds) {
     if (currentAdminId.equals(id)) {
         throw new BadRequestException("Use the /me endpoint to update your own profile");

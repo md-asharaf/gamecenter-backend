@@ -1,15 +1,15 @@
 package com.adnibog.gamecenter.service;
 
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import com.adnibog.gamecenter.dto.request.CreateQuestionRequest;
 import com.adnibog.gamecenter.dto.request.UpdateQuestionRequest;
 import com.adnibog.gamecenter.dto.response.QuestionDto;
 import com.adnibog.gamecenter.dto.response.QuestionPageResponse;
-import com.adnibog.gamecenter.dto.response.QuizQuestion;
 import com.adnibog.gamecenter.dto.response.ProjectDto;
 import com.adnibog.gamecenter.entity.Question;
-import com.adnibog.gamecenter.entity.Project;
+import com.adnibog.gamecenter.event.ProjectDeletedEvent;
 import com.adnibog.gamecenter.exception.BadRequestException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.QuestionMapper;
@@ -17,8 +17,6 @@ import com.adnibog.gamecenter.mapper.ProjectMapper;
 import com.adnibog.gamecenter.repository.QuestionPage;
 import com.adnibog.gamecenter.repository.QuestionRepository;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,14 +30,12 @@ public class QuestionService {
   private final QuestionRepository questionRepository;
   private final QuestionMapper questionMapper;
   private final ProjectService projectService;
-  private final ProjectMapper projectMapper;
 
   public QuestionService(QuestionRepository questionRepository, QuestionMapper questionMapper,
       ProjectService projectService, ProjectMapper projectMapper) {
     this.questionRepository = questionRepository;
     this.questionMapper = questionMapper;
     this.projectService = projectService;
-    this.projectMapper = projectMapper;
   }
 
   public QuestionPageResponse getQuestions(String projectId, int limit, String lastEvaluatedKeyId,
@@ -57,6 +53,10 @@ public class QuestionService {
     Question q = questionRepository.findById(projectId, id)
         .orElseThrow(() -> new NotFoundException("Question not found."));
     return questionMapper.toDto(q, project);
+  }
+
+  public long countByProjectId(String projectId) {
+    return questionRepository.countByProjectId(projectId);
   }
 
   public QuestionDto createQuestion(String projectId, CreateQuestionRequest req) {
@@ -162,58 +162,14 @@ public class QuestionService {
     log.info("Deleted question {} in project {}", id, projectId);
   }
 
-  public List<QuizQuestion> generateQuiz(String projectId) {
-    Project project = projectService.getProjectEntityById(projectId);
-    ProjectDto projectDto = projectMapper.toDto(project);
+  @EventListener
+  public void handleProjectDeletedEvent(ProjectDeletedEvent event) {
+    String projectId = event.getProjectId();
+    log.info("Handling ProjectDeletedEvent for project {}", projectId);
+    questionRepository.deleteAllByProjectId(projectId);
+  }
 
-    int numberOfQuestions = project.getNumberOfQuestionsInQuiz() != null ? project.getNumberOfQuestionsInQuiz() : 10;
-    String mainField = project.getMainQuestionField() != null ? project.getMainQuestionField() : "field1";
-
-    int amountToFetch = Math.max(numberOfQuestions * 4, 50);
-    List<Question> allQuestions = new ArrayList<>(questionRepository.findRandomQuestions(projectId, amountToFetch));
-
-    if (allQuestions.size() < numberOfQuestions) {
-      throw new BadRequestException("Not enough questions in database to form a quiz");
-    }
-
-    Collections.shuffle(allQuestions);
-    List<Question> selectedQuestions = allQuestions.stream()
-        .limit(numberOfQuestions)
-        .collect(Collectors.toList());
-
-    List<QuizQuestion> quiz = new ArrayList<>();
-    for (Question q : selectedQuestions) {
-      List<Question> distractors = new ArrayList<>(allQuestions);
-      distractors.remove(q);
-      Collections.shuffle(distractors);
-
-      List<String> options = new ArrayList<>();
-
-      if ("field2".equalsIgnoreCase(mainField)) {
-        options.add(q.getField1());
-        for (int i = 0; i < 3 && i < distractors.size(); i++) {
-          options.add(distractors.get(i).getField1());
-        }
-      } else {
-        options.add(q.getField2());
-        for (int i = 0; i < 3 && i < distractors.size(); i++) {
-          options.add(distractors.get(i).getField2());
-        }
-      }
-
-      Collections.shuffle(options);
-      QuizQuestion qq = new QuizQuestion();
-      qq.setAnswer("field2".equalsIgnoreCase(mainField) ? q.getField1() : q.getField2());
-      qq.setField1(q.getField1());
-      qq.setField2(q.getField2());
-      qq.setField3(q.getField3());
-      qq.setOptions(options);
-      qq.setProjects(projectDto);
-
-      quiz.add(qq);
-    }
-
-    log.info("Generated quiz of size {} for project {}", quiz.size(), projectId);
-    return quiz;
+  public List<Question> getRandomQuestions(String projectId, int amountToFetch) {
+    return questionRepository.findRandomQuestions(projectId, amountToFetch);
   }
 }

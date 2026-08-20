@@ -12,12 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.adnibog.gamecenter.dto.response.DashboardStatsResponse;
 import com.adnibog.gamecenter.dto.response.GrowthData;
-import com.adnibog.gamecenter.entity.Project;
-import com.adnibog.gamecenter.entity.Role;
-import com.adnibog.gamecenter.entity.User;
-import com.adnibog.gamecenter.repository.ProjectRepository;
-import com.adnibog.gamecenter.repository.QuestionRepository;
-import com.adnibog.gamecenter.repository.UserRepository;
+import com.adnibog.gamecenter.dto.response.ProjectDto;
 import com.adnibog.gamecenter.dto.response.DashboardStatsResponse.ProjectStat;
 
 import lombok.extern.slf4j.Slf4j;
@@ -26,34 +21,19 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class DashboardService {
 
-  private final ProjectRepository projectRepository;
-  private final UserRepository userRepository;
+  private final ProjectService projectService;
   private final UserService userService;
-  private final QuestionRepository questionRepository;
+  private final QuestionService questionService;
 
-  public DashboardService(ProjectRepository projectRepository, UserRepository userRepository, UserService userService,
-      QuestionRepository questionRepository) {
-    this.projectRepository = projectRepository;
-    this.userRepository = userRepository;
+  public DashboardService(ProjectService projectService, UserService userService, QuestionService questionService) {
+    this.projectService = projectService;
     this.userService = userService;
-    this.questionRepository = questionRepository;
+    this.questionService = questionService;
   }
 
   public DashboardStatsResponse getDashboardStats(String adminId) {
-    User admin = userService.getUserEntityById(adminId);
-    List<Project> allProjects;
-    Integer totalAdmins = userRepository.findAll().size();
-
-    if (admin.getRole() == Role.SUPER_ADMIN) {
-      allProjects = projectRepository.findAll();
-    } else {
-      allProjects = new ArrayList<>();
-      if (admin.getProjectIds() != null) {
-        for (String pId : admin.getProjectIds()) {
-          projectRepository.findById(pId).ifPresent(allProjects::add);
-        }
-      }
-    }
+    List<ProjectDto> allProjects = projectService.getAllProjectsForAdmin(adminId);
+    Integer totalAdmins = userService.getTotalAdminCount();
 
     Map<String, Integer> chartDataMap = new LinkedHashMap<>();
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d").withZone(ZoneId.systemDefault());
@@ -63,7 +43,7 @@ public class DashboardService {
       chartDataMap.put(dateLabel, 0);
     }
 
-    for (Project p : allProjects) {
+    for (ProjectDto p : allProjects) {
       if (p.getCreatedAt() != null && p.getCreatedAt() > 0) {
         String label = formatter.format(Instant.ofEpochMilli(p.getCreatedAt()));
         if (chartDataMap.containsKey(label)) {
@@ -80,8 +60,8 @@ public class DashboardService {
     }
 
     List<ProjectStat> projectStats = new ArrayList<>();
-    for (Project p : allProjects) {
-      long qCount = questionRepository.countByProjectId(p.getId());
+    for (ProjectDto p : allProjects) {
+      long qCount = questionService.countByProjectId(p.getId());
       projectStats.add(new ProjectStat(p.getId(), p.getName(), qCount));
     }
 

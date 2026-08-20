@@ -23,7 +23,7 @@ import com.adnibog.gamecenter.dto.response.QuizQuestion;
 import com.adnibog.gamecenter.interceptor.AdminAuthInterceptor;
 import com.adnibog.gamecenter.interceptor.ProjectInterceptor;
 import com.adnibog.gamecenter.service.JwtService;
-import com.adnibog.gamecenter.service.QuestionService;
+import com.adnibog.gamecenter.service.QuizService;
 
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(controllers = QuizController.class, excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
@@ -34,7 +34,7 @@ class QuizControllerTest {
   private MockMvc mockMvc;
 
   @MockBean
-  private QuestionService questionService;
+  private QuizService quizService;
 
   @MockBean
   private JwtService jwtService;
@@ -48,7 +48,7 @@ class QuizControllerTest {
     quizQuestion.setField1("Apple");
     quizQuestion.setProjects(projectDto);
 
-    when(questionService.generateQuiz("proj_123")).thenReturn(List.of(quizQuestion));
+    when(quizService.generateQuiz("proj_123")).thenReturn(List.of(quizQuestion));
 
     mockMvc.perform(get("/projects/proj_123/quiz")
         .requestAttr("adminId", "admin_123"))
