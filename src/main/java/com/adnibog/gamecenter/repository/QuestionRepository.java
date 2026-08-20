@@ -3,7 +3,7 @@ package com.adnibog.gamecenter.repository;
 import java.util.List;
 import java.util.Optional;
 import com.adnibog.gamecenter.repository.pagination.QuestionPage;
-
+import com.adnibog.gamecenter.dto.request.PaginationRequest;
 import com.adnibog.gamecenter.entity.Question;
 
 public interface QuestionRepository {
@@ -17,7 +17,7 @@ public interface QuestionRepository {
 
   void deleteAllByProjectId(String projectId);
 
-  QuestionPage findQuestions(String projectId, int limit, String lastEvaluatedKeyId, String searchKeyword);
+  QuestionPage findQuestions(String projectId, PaginationRequest pageReq);
 
   List<Question> findAll(String projectId);
 

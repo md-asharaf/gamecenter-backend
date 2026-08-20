@@ -15,6 +15,8 @@ import com.adnibog.gamecenter.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import com.adnibog.gamecenter.dto.request.PaginationRequest;
 
 import org.springframework.http.HttpStatus;
 import jakarta.validation.Valid;
@@ -34,7 +36,7 @@ public class AdminController {
   @Operation(summary = "Register Admin", description = "Creates a new sub-admin. Requires SUPER_ADMIN role.")
   @PostMapping
   public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterAdminRequest req) {
-    userService.createAdmin(req.getEmail(), req.getPassword(), req.getProjectIds());
+    userService.createAdmin(req);
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null, "Sub-admin created successfully."));
   }
 
@@ -58,10 +60,8 @@ public class AdminController {
   @GetMapping
   public ResponseEntity<ApiResponse<UserPageResponse>> listAdmins(
       @RequestAttribute("adminId") String currentAdminId,
-      @RequestParam(defaultValue = "10") int limit,
-      @RequestParam(required = false) String lastEvaluatedKey,
-      @RequestParam(required = false) String search) {
-    UserPageResponse admins = userService.getAllAdmins(currentAdminId, limit, lastEvaluatedKey, search);
+      @ModelAttribute PaginationRequest pageReq) {
+    UserPageResponse admins = userService.getAllAdmins(currentAdminId, pageReq);
     return ResponseEntity.ok(ApiResponse.success(admins));
   }
 
@@ -71,8 +71,7 @@ public class AdminController {
       @RequestAttribute("adminId") String currentAdminId,
       @PathVariable String id,
       @Valid @RequestBody UpdateAdminRequest req) {
-    UserDto updatedUser = userService.updateAdmin(currentAdminId, id, req.getEmail(), req.getPassword(),
-        req.getProjectIds());
+    UserDto updatedUser = userService.updateAdmin(currentAdminId, id, req);
     return ResponseEntity.ok(ApiResponse.success(updatedUser, "Sub-admin updated successfully."));
   }
         

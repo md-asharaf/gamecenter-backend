@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.adnibog.gamecenter.entity.Question;
+import com.adnibog.gamecenter.service.parser.impl.CsvQuestionParser;
 
 class CsvQuestionParserTest {
 

@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import com.adnibog.gamecenter.dto.request.CreateProjectRequest;
 import com.adnibog.gamecenter.dto.request.UpdateProjectRequest;
@@ -26,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestAttribute;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import com.adnibog.gamecenter.dto.request.PaginationRequest;
 
 @Tag(name = "Projects", description = "Endpoints for managing projects")
 @SecurityRequirement(name = "bearerAuth")
@@ -52,10 +53,8 @@ public class ProjectController {
   @GetMapping
   public ResponseEntity<ApiResponse<ProjectPageResponse>> listProjects(
       @RequestAttribute("adminId") String adminId,
-      @RequestParam(defaultValue = "10") int limit,
-      @RequestParam(required = false) String lastEvaluatedKey,
-      @RequestParam(required = false) String search) {
-    ProjectPageResponse projects = projectService.listProjects(adminId, limit, lastEvaluatedKey, search);
+      @ModelAttribute PaginationRequest pageReq) {
+    ProjectPageResponse projects = projectService.listProjects(adminId, pageReq);
     return ResponseEntity.ok(ApiResponse.success(projects));
   }
 

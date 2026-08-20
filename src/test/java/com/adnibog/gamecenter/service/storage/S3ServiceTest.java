@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.adnibog.gamecenter.dto.response.UploadUrlResponse;
 import com.adnibog.gamecenter.service.UploadJobService;
+import com.adnibog.gamecenter.service.storage.impl.S3Service;
 
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;

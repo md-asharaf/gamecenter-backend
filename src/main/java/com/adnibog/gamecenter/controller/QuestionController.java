@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.adnibog.gamecenter.dto.request.PaginationRequest;
 
 @Tag(name = "Questions", description = "Endpoints for managing project questions")
 @SecurityRequirement(name = "bearerAuth")
@@ -32,10 +33,8 @@ public class QuestionController {
   @GetMapping
   public ResponseEntity<ApiResponse<QuestionPageResponse>> getQuestions(
       @PathVariable String projectId,
-      @RequestParam(defaultValue = "10") int limit,
-      @RequestParam(required = false) String lastEvaluatedKey,
-      @RequestParam(required = false) String search) {
-    QuestionPageResponse response = questionService.getQuestions(projectId, limit, lastEvaluatedKey, search);
+      @ModelAttribute PaginationRequest pageReq) {
+    QuestionPageResponse response = questionService.getQuestions(projectId, pageReq);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 

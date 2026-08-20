@@ -1,10 +1,11 @@
-package com.adnibog.gamecenter.service.parser;
+package com.adnibog.gamecenter.service.parser.impl;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Component;
 
 import com.adnibog.gamecenter.entity.Question;
+import com.adnibog.gamecenter.service.parser.QuestionParser;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;

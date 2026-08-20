@@ -1,6 +1,7 @@
 package com.adnibog.gamecenter.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -23,7 +24,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.adnibog.gamecenter.config.WebConfig;
 import com.adnibog.gamecenter.dto.request.CreateProjectRequest;
+import com.adnibog.gamecenter.dto.request.PaginationRequest;
 import com.adnibog.gamecenter.dto.model.ProjectDto;
+import com.adnibog.gamecenter.dto.response.ProjectPageResponse;
 import com.adnibog.gamecenter.exception.ForbiddenException;
 import com.adnibog.gamecenter.interceptor.AdminAuthInterceptor;
 import com.adnibog.gamecenter.interceptor.ProjectInterceptor;
@@ -85,8 +88,8 @@ class ProjectControllerTest {
     projectDto.setId("proj_123");
     projectDto.setName("Test Project");
 
-    when(projectService.listProjects("admin_123", 10, null, null))
-        .thenReturn(new com.adnibog.gamecenter.dto.response.ProjectPageResponse(List.of(projectDto), null));
+    when(projectService.listProjects(eq("admin_123"), any(PaginationRequest.class)))
+        .thenReturn(new ProjectPageResponse(List.of(projectDto), null));
 
     mockMvc.perform(get("/projects")
         .requestAttr("adminId", "admin_123"))

@@ -3,6 +3,7 @@ package com.adnibog.gamecenter.service;
 import org.springframework.stereotype.Service;
 
 import com.adnibog.gamecenter.dto.request.CreateProjectRequest;
+import com.adnibog.gamecenter.dto.request.PaginationRequest;
 import com.adnibog.gamecenter.dto.request.UpdateProjectRequest;
 import com.adnibog.gamecenter.dto.model.ProjectDto;
 import com.adnibog.gamecenter.dto.response.ProjectPageResponse;
@@ -107,11 +108,11 @@ public class ProjectService {
     return projectMapper.toDto(project);
   }
 
-  public ProjectPageResponse listProjects(String adminId, int limit, String lastEvaluatedKey, String search) {
+  public ProjectPageResponse listProjects(String adminId, PaginationRequest pageReq) {
     User admin = userService.getUserEntityById(adminId);
 
     if (admin.getRole() == Role.SUPER_ADMIN) {
-      ProjectPage page = projectRepository.findProjects(limit, lastEvaluatedKey, search);
+      ProjectPage page = projectRepository.findProjects(pageReq);
       List<ProjectDto> dtos = page.getItems().stream().map(projectMapper::toDto).collect(Collectors.toList());
       return new ProjectPageResponse(dtos, page.getLastEvaluatedKey());
     }
@@ -123,22 +124,22 @@ public class ProjectService {
     List<ProjectDto> allAllowed = admin.getProjectIds().stream()
         .map(projectId -> projectRepository.findById(projectId).orElse(null))
         .filter(project -> project != null)
-        .filter(project -> search == null || search.trim().isEmpty()
-            || project.getName().toLowerCase().contains(search.toLowerCase()))
+        .filter(project -> pageReq.getSearch() == null || pageReq.getSearch().trim().isEmpty()
+            || project.getName().toLowerCase().contains(pageReq.getSearch().toLowerCase()))
         .map(projectMapper::toDto)
         .collect(Collectors.toList());
 
     int startIndex = 0;
-    if (lastEvaluatedKey != null && !lastEvaluatedKey.isEmpty()) {
+    if (pageReq.getLastEvaluatedKey() != null && !pageReq.getLastEvaluatedKey().isEmpty()) {
       for (int i = 0; i < allAllowed.size(); i++) {
-        if (allAllowed.get(i).getId().equals(lastEvaluatedKey)) {
+        if (allAllowed.get(i).getId().equals(pageReq.getLastEvaluatedKey())) {
           startIndex = i + 1;
           break;
         }
       }
     }
 
-    int endIndex = Math.min(startIndex + limit, allAllowed.size());
+    int endIndex = Math.min(startIndex + pageReq.getLimit(), allAllowed.size());
     List<ProjectDto> paged = allAllowed.subList(startIndex, endIndex);
     String nextKey = endIndex < allAllowed.size() ? paged.get(paged.size() - 1).getId() : null;
 

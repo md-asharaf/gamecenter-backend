@@ -3,6 +3,7 @@ package com.adnibog.gamecenter.repository;
 import java.util.List;
 import java.util.Optional;
 
+import com.adnibog.gamecenter.dto.request.PaginationRequest;
 import com.adnibog.gamecenter.entity.User;
 import com.adnibog.gamecenter.repository.pagination.UserPage;
 
@@ -19,5 +20,5 @@ public interface UserRepository {
 
   void deleteById(String id);
 
-  UserPage findUsers(int limit, String lastEvaluatedKeyId, String searchKeyword);
+  UserPage findUsers(PaginationRequest pageReq);
 }

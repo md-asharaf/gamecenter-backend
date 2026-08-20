@@ -4,6 +4,7 @@ import com.adnibog.gamecenter.repository.ProjectRepository;
 import com.adnibog.gamecenter.repository.pagination.ProjectPage;
 import org.springframework.stereotype.Repository;
 
+import com.adnibog.gamecenter.dto.request.PaginationRequest;
 import com.adnibog.gamecenter.entity.Project;
 
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
@@ -63,7 +64,11 @@ public class DynamoDbProjectRepository implements ProjectRepository {
   }
 
   @Override
-  public ProjectPage findProjects(int limit, String lastEvaluatedKeyId, String searchKeyword) {
+  public ProjectPage findProjects(PaginationRequest pageReq) {
+    int limit = pageReq.getLimit();
+    String lastEvaluatedKeyId = pageReq.getLastEvaluatedKey();
+    String searchKeyword = pageReq.getSearch();
+
     Map<String, AttributeValue> exclusiveStartKey = null;
     if (lastEvaluatedKeyId != null && !lastEvaluatedKeyId.equals("null") && !lastEvaluatedKeyId.trim().isEmpty()) {
       exclusiveStartKey = new HashMap<>();

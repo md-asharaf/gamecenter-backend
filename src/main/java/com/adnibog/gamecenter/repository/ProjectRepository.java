@@ -4,6 +4,7 @@ import java.util.Optional;
 import com.adnibog.gamecenter.repository.pagination.ProjectPage;
 import java.util.List;
 
+import com.adnibog.gamecenter.dto.request.PaginationRequest;
 import com.adnibog.gamecenter.entity.Project;
 
 public interface ProjectRepository {
@@ -17,7 +18,7 @@ public interface ProjectRepository {
 
   List<Project> findAll();
 
-  ProjectPage findProjects(int limit, String lastEvaluatedKeyId, String searchKeyword);
+  ProjectPage findProjects(PaginationRequest pageReq);
 
   List<Project> getMostRecentProjects(int limit);
 }

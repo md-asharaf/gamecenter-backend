@@ -4,6 +4,7 @@ import com.adnibog.gamecenter.repository.QuestionRepository;
 import com.adnibog.gamecenter.repository.pagination.QuestionPage;
 import org.springframework.stereotype.Repository;
 
+import com.adnibog.gamecenter.dto.request.PaginationRequest;
 import com.adnibog.gamecenter.entity.Question;
 
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
@@ -113,7 +114,11 @@ public class DynamoDbQuestionRepository implements QuestionRepository {
   }
 
   @Override
-  public QuestionPage findQuestions(String projectId, int limit, String lastEvaluatedKeyId, String searchKeyword) {
+  public QuestionPage findQuestions(String projectId, PaginationRequest pageReq) {
+    int limit = pageReq.getLimit();
+    String lastEvaluatedKeyId = pageReq.getLastEvaluatedKey();
+    String searchKeyword = pageReq.getSearch();
+
     Map<String, AttributeValue> exclusiveStartKey = null;
     if (lastEvaluatedKeyId != null && !lastEvaluatedKeyId.equals("null")) {
       exclusiveStartKey = new HashMap<>();

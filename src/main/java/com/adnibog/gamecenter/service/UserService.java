@@ -2,8 +2,12 @@ package com.adnibog.gamecenter.service;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
 import com.adnibog.gamecenter.dto.model.UserDto;
+import com.adnibog.gamecenter.dto.request.PaginationRequest;
+import com.adnibog.gamecenter.dto.request.RegisterAdminRequest;
+import com.adnibog.gamecenter.dto.request.UpdateAdminRequest;
 import com.adnibog.gamecenter.dto.response.UserPageResponse;
 import com.adnibog.gamecenter.repository.pagination.UserPage;
 
@@ -11,6 +15,7 @@ import com.adnibog.gamecenter.entity.User;
 import com.adnibog.gamecenter.exception.BadRequestException;
 import com.adnibog.gamecenter.exception.ConflictException;
 import com.adnibog.gamecenter.exception.NotFoundException;
+import com.adnibog.gamecenter.exception.ForbiddenException;
 import com.adnibog.gamecenter.mapper.UserMapper;
 import com.adnibog.gamecenter.repository.UserRepository;
 import com.adnibog.gamecenter.repository.AppStatsRepository;
@@ -23,6 +28,7 @@ import java.util.UUID;
 import com.adnibog.gamecenter.entity.Role;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class UserService {
 
@@ -31,7 +37,8 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
   private final UserMapper userMapper;
 
-  public UserService(UserRepository userRepository, AppStatsRepository appStatsRepository, PasswordEncoder passwordEncoder, UserMapper userMapper) {
+  public UserService(UserRepository userRepository, AppStatsRepository appStatsRepository,
+      PasswordEncoder passwordEncoder, UserMapper userMapper) {
     this.userRepository = userRepository;
     this.appStatsRepository = appStatsRepository;
     this.passwordEncoder = passwordEncoder;
@@ -58,8 +65,8 @@ public class UserService {
     userRepository.save(user);
   }
 
-  public UserPageResponse getAllAdmins(String currentAdminId, int limit, String lastEvaluatedKey, String search) {
-    UserPage page = userRepository.findUsers(limit, lastEvaluatedKey, search);
+  public UserPageResponse getAllAdmins(String currentAdminId, PaginationRequest pageReq) {
+    UserPage page = userRepository.findUsers(pageReq);
     List<UserDto> dtos = page.getItems().stream()
         .filter(user -> !user.getId().equals(currentAdminId))
         .map(userMapper::toDto)
@@ -71,18 +78,20 @@ public class UserService {
     return (int) appStatsRepository.getTotalAdmins();
   }
 
-  public UserDto updateAdmin(String currentAdminId, String id, String email, String password, Set<String> projectIds) {
+  public UserDto updateAdmin(String currentAdminId, String id, UpdateAdminRequest req) {
     if (currentAdminId.equals(id)) {
-        throw new BadRequestException("Use the /me endpoint to update your own profile");
+      throw new BadRequestException("Use the /me endpoint to update your own profile");
     }
     User user = userRepository.findById(id)
         .orElseThrow(() -> new NotFoundException("Sub-admin not found."));
     if (user.getRole() == Role.SUPER_ADMIN) {
-        throw new com.adnibog.gamecenter.exception.ForbiddenException("Modification of another Super Admin is prohibited.");
+      log.warn("Admin {} attempted to edit Super Admin {}", currentAdminId, id);
+      throw new ForbiddenException(
+          "Modification of another Super Admin is prohibited.");
     }
 
-    if (email != null && !email.isBlank()) {
-      String newEmail = email.toLowerCase();
+    if (req.getEmail() != null && !req.getEmail().isBlank()) {
+      String newEmail = req.getEmail().toLowerCase();
       if (!newEmail.equals(user.getEmail())) {
         if (userRepository.findByEmail(newEmail).isPresent()) {
           throw new ConflictException("Email is already in use.");
@@ -91,12 +100,18 @@ public class UserService {
       }
     }
 
-    if (password != null && !password.isBlank()) {
-      user.setPasswordHash(passwordEncoder.encode(password));
+    if (req.getPassword() != null && !req.getPassword().isBlank()) {
+      user.setPasswordHash(passwordEncoder.encode(req.getPassword()));
     }
 
-    if (projectIds != null) {
-      user.setProjectIds(projectIds);
+    if (req.getRole() != null) {
+      user.setRole(req.getRole());
+    }
+
+    if (user.getRole() == Role.SUPER_ADMIN) {
+      user.setProjectIds(null);
+    } else if (req.getProjectIds() != null) {
+      user.setProjectIds(req.getProjectIds().isEmpty() ? null : req.getProjectIds());
     }
 
     user.setUpdatedAt(System.currentTimeMillis());
@@ -112,6 +127,7 @@ public class UserService {
     user.setUpdatedAt(System.currentTimeMillis());
     userRepository.save(user);
   }
+
   public void deleteAdmin(String currentAdminId, String id) {
     if (currentAdminId.equals(id)) {
       throw new BadRequestException("Self-deletion is not permitted.");
@@ -119,24 +135,29 @@ public class UserService {
     User user = userRepository.findById(id)
         .orElseThrow(() -> new NotFoundException("Sub-admin not found."));
     if (user.getRole() == Role.SUPER_ADMIN) {
-        throw new com.adnibog.gamecenter.exception.ForbiddenException("Deletion of another Super Admin is prohibited.");
+      log.warn("Admin {} attempted to delete Super Admin {}", currentAdminId, id);
+      throw new ForbiddenException("Deletion of another Super Admin is prohibited.");
     }
     userRepository.deleteById(id);
     appStatsRepository.decrementTotalAdmins();
   }
 
-  public void createAdmin(String email, String password, Set<String> projectIds) {
-    if (userRepository.findByEmail(email).isPresent()) {
+  public void createAdmin(RegisterAdminRequest req) {
+    if (userRepository.findByEmail(req.getEmail()).isPresent()) {
       throw new ConflictException("Email is already in use.");
     }
+
+    Role assignedRole = req.getRole() != null ? req.getRole() : Role.SUB_ADMIN;
+    Set<String> assignedProjectIds = assignedRole == Role.SUPER_ADMIN ? null
+        : (req.getProjectIds() != null && req.getProjectIds().isEmpty() ? null : req.getProjectIds());
 
     final long now = System.currentTimeMillis();
     final User user = User.builder()
         .id(UUID.randomUUID().toString())
-        .email(email.toLowerCase())
-        .passwordHash(passwordEncoder.encode(password))
-        .role(Role.SUB_ADMIN)
-        .projectIds(projectIds)
+        .email(req.getEmail().toLowerCase())
+        .passwordHash(passwordEncoder.encode(req.getPassword()))
+        .role(assignedRole)
+        .projectIds(assignedProjectIds)
         .createdAt(now)
         .updatedAt(now)
         .build();

@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.AssertTrue;
 import java.util.Set;
 
+import com.adnibog.gamecenter.entity.Role;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,10 +18,13 @@ public class UpdateAdminRequest {
   private String password;
   private Set<String> projectIds;
 
+  private Role role;
+
   @AssertTrue(message = "At least one update field is required.")
   public boolean isAtLeastOneFieldProvided() {
-    return (email != null && !email.isBlank()) || 
-           (password != null && !password.isBlank()) ||
-           (projectIds != null);
+    return (email != null && !email.isBlank()) ||
+        (password != null && !password.isBlank()) ||
+        (projectIds != null) ||
+        (role != null);
   }
 }

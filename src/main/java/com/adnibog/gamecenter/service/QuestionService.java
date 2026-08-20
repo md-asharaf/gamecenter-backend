@@ -4,6 +4,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import com.adnibog.gamecenter.dto.request.CreateQuestionRequest;
+import com.adnibog.gamecenter.dto.request.PaginationRequest;
 import com.adnibog.gamecenter.dto.request.UpdateQuestionRequest;
 import com.adnibog.gamecenter.dto.model.QuestionDto;
 import com.adnibog.gamecenter.dto.response.QuestionPageResponse;
@@ -38,10 +39,9 @@ public class QuestionService {
     this.projectService = projectService;
   }
 
-  public QuestionPageResponse getQuestions(String projectId, int limit, String lastEvaluatedKeyId,
-      String searchKeyword) {
+  public QuestionPageResponse getQuestions(String projectId, PaginationRequest pageReq) {
     ProjectDto project = projectService.getProjectById(projectId);
-    QuestionPage page = questionRepository.findQuestions(projectId, limit, lastEvaluatedKeyId, searchKeyword);
+    QuestionPage page = questionRepository.findQuestions(projectId, pageReq);
     List<QuestionDto> dtos = page.getItems().stream()
         .map(q -> questionMapper.toDto(q, project))
         .collect(Collectors.toList());

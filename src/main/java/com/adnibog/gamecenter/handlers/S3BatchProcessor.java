@@ -8,19 +8,17 @@ import com.adnibog.gamecenter.service.parser.QuestionParser;
 import com.adnibog.gamecenter.service.parser.QuestionParserFactory;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Component
 public class S3BatchProcessor {
-
-  private static final Logger logger = LoggerFactory.getLogger(S3BatchProcessor.class);
 
   private final QuestionService questionService;
   private final QuestionParserFactory parserFactory;
@@ -45,7 +43,7 @@ public class S3BatchProcessor {
         projectId = key.substring(0, key.indexOf("/"));
       }
 
-      logger.info("Processing file from S3: bucket={}, key={}, projectId={}", bucket, key, projectId);
+      log.info("Processing file from S3: bucket={}, key={}, projectId={}", bucket, key, projectId);
       uploadJobService.updateJobStatus(key, "PROCESSING", null);
 
       try (InputStream s3Stream = storageService.getFileStream(bucket, key)) {
@@ -59,15 +57,15 @@ public class S3BatchProcessor {
           throw new IllegalArgumentException("Unsupported file extension for key: " + key);
         }
 
-        logger.info("Parsed {} questions. Saving to database...", questions.size());
+        log.info("Parsed {} questions. Saving to database...", questions.size());
 
         questionService.saveQuestionsBatch(projectId, questions);
 
-        logger.info("Successfully saved {} questions.", questions.size());
+        log.info("Successfully saved {} questions.", questions.size());
         uploadJobService.updateJobStatus(key, "COMPLETED", null);
 
       } catch (Exception e) {
-        logger.error("Error processing file {} from bucket {}", key, bucket, e);
+        log.error("Error processing file {} from bucket {}", key, bucket, e);
         String errorMsg = e.getMessage();
         if (errorMsg != null && errorMsg.length() > 150) {
           errorMsg = errorMsg.substring(0, 150) + "...";

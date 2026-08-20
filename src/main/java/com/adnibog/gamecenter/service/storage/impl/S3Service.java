@@ -1,4 +1,4 @@
-package com.adnibog.gamecenter.service.storage;
+package com.adnibog.gamecenter.service.storage.impl;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -15,6 +15,8 @@ import java.io.InputStream;
 import java.time.Duration;
 import java.util.UUID;
 import com.adnibog.gamecenter.service.UploadJobService;
+import com.adnibog.gamecenter.service.storage.StorageService;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

@@ -1,4 +1,4 @@
-package com.adnibog.gamecenter.service.parser;
+package com.adnibog.gamecenter.service.parser.impl;
 
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
@@ -6,6 +6,7 @@ import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.springframework.stereotype.Component;
 
 import com.adnibog.gamecenter.entity.Question;
+import com.adnibog.gamecenter.service.parser.QuestionParser;
 
 import java.io.InputStream;
 import java.util.ArrayList;

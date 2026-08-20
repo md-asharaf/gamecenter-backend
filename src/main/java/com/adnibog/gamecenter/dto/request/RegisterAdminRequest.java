@@ -8,6 +8,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.util.Set;
 
+import com.adnibog.gamecenter.entity.Role;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,4 +23,6 @@ public class RegisterAdminRequest {
   private String password;
 
   private Set<String> projectIds;
+
+  private Role role;
 }

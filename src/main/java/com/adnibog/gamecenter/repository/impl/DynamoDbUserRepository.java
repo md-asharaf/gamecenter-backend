@@ -4,6 +4,7 @@ import com.adnibog.gamecenter.repository.UserRepository;
 import com.adnibog.gamecenter.repository.pagination.UserPage;
 import org.springframework.stereotype.Repository;
 
+import com.adnibog.gamecenter.dto.request.PaginationRequest;
 import com.adnibog.gamecenter.entity.User;
 
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
@@ -83,7 +84,11 @@ public class DynamoDbUserRepository implements UserRepository {
   }
 
   @Override
-  public UserPage findUsers(int limit, String lastEvaluatedKeyId, String searchKeyword) {
+  public UserPage findUsers(PaginationRequest pageReq) {
+    int limit = pageReq.getLimit();
+    String lastEvaluatedKeyId = pageReq.getLastEvaluatedKey();
+    String searchKeyword = pageReq.getSearch();
+
     Map<String, AttributeValue> exclusiveStartKey = null;
     if (lastEvaluatedKeyId != null && !lastEvaluatedKeyId.equals("null") && !lastEvaluatedKeyId.trim().isEmpty()) {
       exclusiveStartKey = new HashMap<>();
