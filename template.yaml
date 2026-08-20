@@ -103,6 +103,18 @@ Resources:
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
 
+  AppStatsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: AppStats
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
   QuestionsImportBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -130,6 +142,8 @@ Resources:
             TableName: !Ref ProjectsTable
         - DynamoDBCrudPolicy:
             TableName: !Ref UploadJobsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AppStatsTable
         - S3CrudPolicy:
             BucketName: !Ref ImportBucketName
       Events:

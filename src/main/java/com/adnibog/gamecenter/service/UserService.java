@@ -13,6 +13,7 @@ import com.adnibog.gamecenter.exception.ConflictException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.UserMapper;
 import com.adnibog.gamecenter.repository.UserRepository;
+import com.adnibog.gamecenter.repository.AppStatsRepository;
 import java.util.Optional;
 
 import java.util.HashSet;
@@ -26,11 +27,13 @@ import java.util.stream.Collectors;
 public class UserService {
 
   private final UserRepository userRepository;
+  private final AppStatsRepository appStatsRepository;
   private final PasswordEncoder passwordEncoder;
   private final UserMapper userMapper;
 
-  public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserMapper userMapper) {
+  public UserService(UserRepository userRepository, AppStatsRepository appStatsRepository, PasswordEncoder passwordEncoder, UserMapper userMapper) {
     this.userRepository = userRepository;
+    this.appStatsRepository = appStatsRepository;
     this.passwordEncoder = passwordEncoder;
     this.userMapper = userMapper;
   }
@@ -65,7 +68,7 @@ public class UserService {
   }
 
   public int getTotalAdminCount() {
-    return (int) userRepository.countAll();
+    return (int) appStatsRepository.getTotalAdmins();
   }
 
   public UserDto updateAdmin(String currentAdminId, String id, String email, String password, Set<String> projectIds) {
@@ -119,6 +122,7 @@ public class UserService {
         throw new com.adnibog.gamecenter.exception.ForbiddenException("Deletion of another Super Admin is prohibited.");
     }
     userRepository.deleteById(id);
+    appStatsRepository.decrementTotalAdmins();
   }
 
   public void createAdmin(String email, String password, Set<String> projectIds) {
@@ -138,6 +142,7 @@ public class UserService {
         .build();
 
     userRepository.save(user);
+    appStatsRepository.incrementTotalAdmins();
   }
 
   public void addProjectToAdmin(String adminId, String projectId) {
