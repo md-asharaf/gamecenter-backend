@@ -53,12 +53,12 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ApiError> handleValidationExceptions(MethodArgumentNotValidException ex) {
     List<String> errors = ex.getBindingResult().getFieldErrors().stream()
-        .map(error -> error.getDefaultMessage() != null ? error.getDefaultMessage() : "Invalid field")
+        .map(error -> error.getField() + ": " + (error.getDefaultMessage() != null ? error.getDefaultMessage() : "Invalid value"))
         .collect(Collectors.toList());
 
     ex.getBindingResult().getGlobalErrors().forEach(error -> {
       if (error.getDefaultMessage() != null) {
-        errors.add(error.getDefaultMessage());
+        errors.add(error.getObjectName() + ": " + error.getDefaultMessage());
       }
     });
 
@@ -68,8 +68,9 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiError> handleGeneralException(Exception ex) {
-    log.error("Unhandled internal server error occurred", ex);
-    return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An internal server error occurred");
+    String traceId = java.util.UUID.randomUUID().toString();
+    log.error("Unhandled internal server error occurred. Trace ID: {}", traceId, ex);
+    return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please contact support. Reference ID: " + traceId);
   }
 
   private ResponseEntity<ApiError> buildErrorResponse(@NonNull HttpStatus status, String message) {
