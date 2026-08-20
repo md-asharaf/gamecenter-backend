@@ -71,21 +71,20 @@ public class DynamoDbFolderRepository implements FolderRepository {
     Map<String, AttributeValue> expressionValues = new HashMap<>();
     expressionValues.put(":n", AttributeValue.builder().s(name).build());
 
-    String expression = "#n = :n";
-    if (excludeFolderId != null && !excludeFolderId.isEmpty()) {
-      expressionNames.put("#id", "id");
-      expressionValues.put(":id", AttributeValue.builder().s(excludeFolderId).build());
-      expression += " AND #id <> :id";
-    }
-
     Expression filterExpression = Expression.builder()
-        .expression(expression)
+        .expression("#n = :n")
         .expressionNames(expressionNames)
         .expressionValues(expressionValues)
         .build();
 
-    return folderTable.query(r -> r.queryConditional(conditional).filterExpression(filterExpression).limit(1)).items()
-        .iterator().hasNext();
+    for (Page<Folder> page : folderTable.query(r -> r.queryConditional(conditional).filterExpression(filterExpression))) {
+      for (Folder f : page.items()) {
+        if (excludeFolderId == null || !f.getId().equals(excludeFolderId)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   @Override

@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondarySortKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
 
 @Data
@@ -29,7 +31,13 @@ public class Question {
   }
 
   @DynamoDbSortKey
+  @DynamoDbSecondarySortKey(indexNames = "folder-index")
   public String getId() {
     return id;
+  }
+
+  @DynamoDbSecondaryPartitionKey(indexNames = "folder-index")
+  public String getFolderId() {
+    return folderId;
   }
 }
