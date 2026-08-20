@@ -5,16 +5,16 @@ import org.springframework.stereotype.Service;
 
 import com.adnibog.gamecenter.dto.request.CreateQuestionRequest;
 import com.adnibog.gamecenter.dto.request.UpdateQuestionRequest;
-import com.adnibog.gamecenter.dto.response.QuestionDto;
+import com.adnibog.gamecenter.dto.model.QuestionDto;
 import com.adnibog.gamecenter.dto.response.QuestionPageResponse;
-import com.adnibog.gamecenter.dto.response.ProjectDto;
+import com.adnibog.gamecenter.dto.model.ProjectDto;
 import com.adnibog.gamecenter.entity.Question;
 import com.adnibog.gamecenter.event.ProjectDeletedEvent;
 import com.adnibog.gamecenter.exception.BadRequestException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.QuestionMapper;
 import com.adnibog.gamecenter.mapper.ProjectMapper;
-import com.adnibog.gamecenter.repository.QuestionPage;
+import com.adnibog.gamecenter.repository.pagination.QuestionPage;
 import com.adnibog.gamecenter.repository.QuestionRepository;
 
 import java.util.List;

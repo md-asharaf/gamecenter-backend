@@ -2,7 +2,7 @@ package com.adnibog.gamecenter.mapper;
 
 import org.springframework.stereotype.Component;
 
-import com.adnibog.gamecenter.dto.response.UserDto;
+import com.adnibog.gamecenter.dto.model.UserDto;
 import com.adnibog.gamecenter.entity.User;
 
 @Component

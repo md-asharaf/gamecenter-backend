@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.adnibog.gamecenter.dto.request.CreateProjectRequest;
 import com.adnibog.gamecenter.dto.request.UpdateProjectRequest;
 import com.adnibog.gamecenter.dto.response.ApiResponse;
-import com.adnibog.gamecenter.dto.response.ProjectDto;
+import com.adnibog.gamecenter.dto.model.ProjectDto;
 import com.adnibog.gamecenter.dto.response.ProjectPageResponse;
 
 import com.adnibog.gamecenter.service.ProjectService;

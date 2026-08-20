@@ -17,8 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.adnibog.gamecenter.dto.request.CreateQuestionRequest;
 import com.adnibog.gamecenter.dto.request.UpdateQuestionRequest;
-import com.adnibog.gamecenter.dto.response.ProjectDto;
-import com.adnibog.gamecenter.dto.response.QuestionDto;
+import com.adnibog.gamecenter.dto.model.ProjectDto;
+import com.adnibog.gamecenter.dto.model.QuestionDto;
 import com.adnibog.gamecenter.entity.Question;
 import com.adnibog.gamecenter.exception.BadRequestException;
 import com.adnibog.gamecenter.mapper.ProjectMapper;

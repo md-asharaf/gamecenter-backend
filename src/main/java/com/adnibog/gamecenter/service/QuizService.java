@@ -2,8 +2,8 @@ package com.adnibog.gamecenter.service;
 
 import org.springframework.stereotype.Service;
 
-import com.adnibog.gamecenter.dto.response.QuizQuestion;
-import com.adnibog.gamecenter.dto.response.ProjectDto;
+import com.adnibog.gamecenter.dto.model.QuizQuestion;
+import com.adnibog.gamecenter.dto.model.ProjectDto;
 import com.adnibog.gamecenter.entity.Question;
 import com.adnibog.gamecenter.exception.BadRequestException;
 

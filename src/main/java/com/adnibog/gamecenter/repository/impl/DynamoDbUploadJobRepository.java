@@ -1,5 +1,6 @@
-package com.adnibog.gamecenter.repository;
+package com.adnibog.gamecenter.repository.impl;
 
+import com.adnibog.gamecenter.repository.UploadJobRepository;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;

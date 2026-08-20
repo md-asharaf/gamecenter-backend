@@ -1,5 +1,7 @@
-package com.adnibog.gamecenter.repository;
+package com.adnibog.gamecenter.repository.impl;
 
+import com.adnibog.gamecenter.repository.QuestionRepository;
+import com.adnibog.gamecenter.repository.pagination.QuestionPage;
 import org.springframework.stereotype.Repository;
 
 import com.adnibog.gamecenter.entity.Question;

@@ -1,4 +1,4 @@
-package com.adnibog.gamecenter.dto.response;
+package com.adnibog.gamecenter.dto.model;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;

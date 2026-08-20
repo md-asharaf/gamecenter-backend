@@ -4,9 +4,9 @@ import org.springframework.stereotype.Service;
 
 import com.adnibog.gamecenter.dto.request.CreateProjectRequest;
 import com.adnibog.gamecenter.dto.request.UpdateProjectRequest;
-import com.adnibog.gamecenter.dto.response.ProjectDto;
+import com.adnibog.gamecenter.dto.model.ProjectDto;
 import com.adnibog.gamecenter.dto.response.ProjectPageResponse;
-import com.adnibog.gamecenter.repository.ProjectPage;
+import com.adnibog.gamecenter.repository.pagination.ProjectPage;
 
 import com.adnibog.gamecenter.entity.Project;
 import com.adnibog.gamecenter.entity.User;

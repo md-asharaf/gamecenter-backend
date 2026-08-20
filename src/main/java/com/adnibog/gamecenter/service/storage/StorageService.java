@@ -1,4 +1,4 @@
-package com.adnibog.gamecenter.service;
+package com.adnibog.gamecenter.service.storage;
 
 import java.io.InputStream;
 

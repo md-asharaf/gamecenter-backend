@@ -1,8 +1,8 @@
 package com.adnibog.gamecenter.mapper;
 
 import org.springframework.stereotype.Component;
-import com.adnibog.gamecenter.dto.response.QuestionDto;
-import com.adnibog.gamecenter.dto.response.ProjectDto;
+import com.adnibog.gamecenter.dto.model.QuestionDto;
+import com.adnibog.gamecenter.dto.model.ProjectDto;
 import com.adnibog.gamecenter.entity.Question;
 
 @Component

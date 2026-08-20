@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.adnibog.gamecenter.entity.User;
+import com.adnibog.gamecenter.repository.pagination.UserPage;
 
 public interface UserRepository {
   Optional<User> findByEmail(String email);

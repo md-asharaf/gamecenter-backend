@@ -1,5 +1,6 @@
-package com.adnibog.gamecenter.repository;
+package com.adnibog.gamecenter.repository.impl;
 
+import com.adnibog.gamecenter.repository.AppStatsRepository;
 import java.util.HashMap;
 import java.util.Map;
 

@@ -4,7 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.adnibog.gamecenter.dto.response.ApiResponse;
-import com.adnibog.gamecenter.dto.response.QuizQuestion;
+import com.adnibog.gamecenter.dto.model.QuizQuestion;
 import com.adnibog.gamecenter.service.QuizService;
 
 import io.swagger.v3.oas.annotations.Operation;

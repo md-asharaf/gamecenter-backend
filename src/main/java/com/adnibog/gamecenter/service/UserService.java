@@ -3,9 +3,9 @@ package com.adnibog.gamecenter.service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.adnibog.gamecenter.dto.response.UserDto;
+import com.adnibog.gamecenter.dto.model.UserDto;
 import com.adnibog.gamecenter.dto.response.UserPageResponse;
-import com.adnibog.gamecenter.repository.UserPage;
+import com.adnibog.gamecenter.repository.pagination.UserPage;
 
 import com.adnibog.gamecenter.entity.User;
 import com.adnibog.gamecenter.exception.BadRequestException;

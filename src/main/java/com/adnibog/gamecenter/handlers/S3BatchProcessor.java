@@ -2,7 +2,7 @@ package com.adnibog.gamecenter.handlers;
 
 import com.adnibog.gamecenter.entity.Question;
 import com.adnibog.gamecenter.service.QuestionService;
-import com.adnibog.gamecenter.service.StorageService;
+import com.adnibog.gamecenter.service.storage.StorageService;
 import com.adnibog.gamecenter.service.UploadJobService;
 import com.adnibog.gamecenter.service.parser.QuestionParser;
 import com.adnibog.gamecenter.service.parser.QuestionParserFactory;

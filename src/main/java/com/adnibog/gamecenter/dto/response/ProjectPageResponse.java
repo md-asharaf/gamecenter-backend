@@ -1,5 +1,6 @@
 package com.adnibog.gamecenter.dto.response;
 
+import com.adnibog.gamecenter.dto.model.ProjectDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

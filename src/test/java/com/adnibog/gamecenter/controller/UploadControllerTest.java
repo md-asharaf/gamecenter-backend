@@ -20,7 +20,7 @@ import com.adnibog.gamecenter.dto.response.UploadUrlResponse;
 import com.adnibog.gamecenter.interceptor.AdminAuthInterceptor;
 import com.adnibog.gamecenter.interceptor.ProjectInterceptor;
 import com.adnibog.gamecenter.service.JwtService;
-import com.adnibog.gamecenter.service.StorageService;
+import com.adnibog.gamecenter.service.storage.StorageService;
 import com.adnibog.gamecenter.service.UploadJobService;
 
 @ExtendWith(SpringExtension.class)

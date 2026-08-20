@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import com.adnibog.gamecenter.dto.request.CreateQuestionRequest;
 import com.adnibog.gamecenter.dto.request.UpdateQuestionRequest;
 import com.adnibog.gamecenter.dto.response.ApiResponse;
-import com.adnibog.gamecenter.dto.response.QuestionDto;
+import com.adnibog.gamecenter.dto.model.QuestionDto;
 import com.adnibog.gamecenter.dto.response.QuestionPageResponse;
 import com.adnibog.gamecenter.service.QuestionService;
 

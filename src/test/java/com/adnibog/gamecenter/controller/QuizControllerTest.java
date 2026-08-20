@@ -18,8 +18,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.adnibog.gamecenter.config.WebConfig;
-import com.adnibog.gamecenter.dto.response.ProjectDto;
-import com.adnibog.gamecenter.dto.response.QuizQuestion;
+import com.adnibog.gamecenter.dto.model.ProjectDto;
+import com.adnibog.gamecenter.dto.model.QuizQuestion;
 import com.adnibog.gamecenter.interceptor.AdminAuthInterceptor;
 import com.adnibog.gamecenter.interceptor.ProjectInterceptor;
 import com.adnibog.gamecenter.service.JwtService;

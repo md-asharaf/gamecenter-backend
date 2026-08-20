@@ -1,4 +1,4 @@
-package com.adnibog.gamecenter.service;
+package com.adnibog.gamecenter.service.storage;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.UUID;
+import com.adnibog.gamecenter.service.UploadJobService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

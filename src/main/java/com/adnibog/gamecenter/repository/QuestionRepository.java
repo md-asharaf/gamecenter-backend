@@ -2,6 +2,7 @@ package com.adnibog.gamecenter.repository;
 
 import java.util.List;
 import java.util.Optional;
+import com.adnibog.gamecenter.repository.pagination.QuestionPage;
 
 import com.adnibog.gamecenter.entity.Question;
 

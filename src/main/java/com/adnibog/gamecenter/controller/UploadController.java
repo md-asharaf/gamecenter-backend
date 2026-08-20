@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import com.adnibog.gamecenter.dto.response.ApiResponse;
 import com.adnibog.gamecenter.dto.response.UploadUrlResponse;
-import com.adnibog.gamecenter.dto.response.UploadJobDto;
-import com.adnibog.gamecenter.service.StorageService;
+import com.adnibog.gamecenter.dto.model.UploadJobDto;
+import com.adnibog.gamecenter.service.storage.StorageService;
 import com.adnibog.gamecenter.entity.UploadJob;
 import com.adnibog.gamecenter.service.UploadJobService;
 import com.adnibog.gamecenter.exception.NotFoundException;

@@ -15,7 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.adnibog.gamecenter.dto.request.CreateProjectRequest;
 import com.adnibog.gamecenter.dto.request.UpdateProjectRequest;
-import com.adnibog.gamecenter.dto.response.ProjectDto;
+import com.adnibog.gamecenter.dto.model.ProjectDto;
 import com.adnibog.gamecenter.entity.Project;
 import com.adnibog.gamecenter.entity.Role;
 import com.adnibog.gamecenter.entity.User;

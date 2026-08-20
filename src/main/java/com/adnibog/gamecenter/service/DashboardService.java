@@ -11,8 +11,8 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 
 import com.adnibog.gamecenter.dto.response.DashboardStatsResponse;
-import com.adnibog.gamecenter.dto.response.GrowthData;
-import com.adnibog.gamecenter.dto.response.ProjectDto;
+import com.adnibog.gamecenter.dto.model.GrowthData;
+import com.adnibog.gamecenter.dto.model.ProjectDto;
 import com.adnibog.gamecenter.dto.response.DashboardStatsResponse.ProjectStat;
 
 import lombok.extern.slf4j.Slf4j;

@@ -7,7 +7,7 @@ import com.adnibog.gamecenter.dto.request.RegisterAdminRequest;
 import com.adnibog.gamecenter.dto.request.UpdateAdminRequest;
 import com.adnibog.gamecenter.dto.request.ChangePasswordRequest;
 import com.adnibog.gamecenter.dto.response.ApiResponse;
-import com.adnibog.gamecenter.dto.response.UserDto;
+import com.adnibog.gamecenter.dto.model.UserDto;
 import com.adnibog.gamecenter.dto.response.UserPageResponse;
 
 import com.adnibog.gamecenter.service.UserService;

@@ -1,4 +1,4 @@
-package com.adnibog.gamecenter.service;
+package com.adnibog.gamecenter.service.storage;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.adnibog.gamecenter.dto.response.UploadUrlResponse;
+import com.adnibog.gamecenter.service.UploadJobService;
 
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
