@@ -108,9 +108,19 @@ public class DynamoDbQuestionRepository implements QuestionRepository {
   }
 
   @Override
-  public List<Question> findAll(String projectId) {
-    QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(projectId).build());
-    return questionTable.query(conditional).items().stream().toList();
+  public void deleteAllByFolderId(String projectId, String folderId) {
+    QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(folderId).build());
+    questionTable.index("folder-index").query(conditional).stream()
+        .flatMap(page -> page.items().stream())
+        .forEach(q -> deleteById(projectId, q.getId()));
+  }
+
+  @Override
+  public void deleteMultiple(String projectId, List<String> questionIds) {
+    if (questionIds == null || questionIds.isEmpty()) return;
+    for (String id : questionIds) {
+      deleteById(projectId, id);
+    }
   }
 
   @Override
@@ -177,20 +187,84 @@ public class DynamoDbQuestionRepository implements QuestionRepository {
   }
 
   @Override
-  public List<Question> findRandomQuestions(String projectId, int amount) {
+  public QuestionPage findQuestionsByFolderId(String projectId, String folderId, PaginationRequest pageReq) {
+    int limit = pageReq.getLimit();
+    String lastEvaluatedKeyId = pageReq.getLastEvaluatedKey();
+    String searchKeyword = pageReq.getSearch();
+
+    Map<String, AttributeValue> exclusiveStartKey = null;
+    if (lastEvaluatedKeyId != null && !lastEvaluatedKeyId.equals("null") && !lastEvaluatedKeyId.isEmpty()) {
+      exclusiveStartKey = new HashMap<>();
+      exclusiveStartKey.put("projectId", AttributeValue.builder().s(projectId).build());
+      exclusiveStartKey.put("folderId", AttributeValue.builder().s(folderId).build());
+      exclusiveStartKey.put("id", AttributeValue.builder().s(lastEvaluatedKeyId).build());
+    }
+
+    final Map<String, AttributeValue> finalExclusiveStartKey = exclusiveStartKey;
+    List<Question> resultItems = new ArrayList<>();
+    String nextKey = null;
+
+    QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(folderId).build());
+
+    if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+      Expression filterExpression = Expression.builder()
+          .expression("contains(field1, :v) OR contains(field2, :v) OR contains(field3, :v)")
+          .putExpressionValue(":v", AttributeValue.builder().s(searchKeyword).build())
+          .build();
+
+      Iterator<Page<Question>> iterator = questionTable.index("folder-index").query(r -> {
+        r.queryConditional(conditional);
+        r.filterExpression(filterExpression);
+        if (finalExclusiveStartKey != null) {
+          r.exclusiveStartKey(finalExclusiveStartKey);
+        }
+      }).iterator();
+
+      outerLoop: while (iterator.hasNext()) {
+        Page<Question> page = iterator.next();
+        for (Question q : page.items()) {
+          resultItems.add(q);
+          if (resultItems.size() == limit) {
+            nextKey = q.getId();
+            break outerLoop;
+          }
+        }
+      }
+    } else {
+      Page<Question> firstPage = questionTable.index("folder-index").query(r -> {
+        r.queryConditional(conditional);
+        r.limit(limit);
+        if (finalExclusiveStartKey != null) {
+          r.exclusiveStartKey(finalExclusiveStartKey);
+        }
+      }).stream().findFirst().orElse(null);
+
+      if (firstPage != null) {
+        resultItems.addAll(firstPage.items());
+        if (firstPage.lastEvaluatedKey() != null && firstPage.lastEvaluatedKey().containsKey("id")) {
+          nextKey = firstPage.lastEvaluatedKey().get("id").s();
+        }
+      }
+    }
+
+    return new QuestionPage(resultItems, nextKey);
+  }
+
+  @Override
+  public List<Question> findRandomQuestionsByFolderId(String projectId, String folderId, int amount) {
     String randomStart = UUID.randomUUID().toString();
     QueryConditional forward = QueryConditional.sortGreaterThanOrEqualTo(
-        Key.builder().partitionValue(projectId).sortValue(randomStart).build());
+        Key.builder().partitionValue(folderId).sortValue(randomStart).build());
 
     List<Question> results = new ArrayList<>();
-    Iterator<Page<Question>> iterator = questionTable.query(r -> r.queryConditional(forward).limit(amount)).iterator();
+    Iterator<Page<Question>> iterator = questionTable.index("folder-index").query(r -> r.queryConditional(forward).limit(amount)).iterator();
     if (iterator.hasNext()) {
       results.addAll(iterator.next().items());
     }
 
     if (results.size() < amount) {
-      QueryConditional wrap = QueryConditional.keyEqualTo(Key.builder().partitionValue(projectId).build());
-      Iterator<Page<Question>> wrapIter = questionTable
+      QueryConditional wrap = QueryConditional.keyEqualTo(Key.builder().partitionValue(folderId).build());
+      Iterator<Page<Question>> wrapIter = questionTable.index("folder-index")
           .query(r -> r.queryConditional(wrap).limit(amount - results.size())).iterator();
       if (wrapIter.hasNext()) {
         results.addAll(wrapIter.next().items());

@@ -19,9 +19,7 @@ import com.adnibog.gamecenter.config.WebConfig;
 import com.adnibog.gamecenter.dto.response.UploadUrlResponse;
 import com.adnibog.gamecenter.interceptor.AdminAuthInterceptor;
 import com.adnibog.gamecenter.interceptor.ProjectInterceptor;
-import com.adnibog.gamecenter.service.JwtService;
-import com.adnibog.gamecenter.service.storage.StorageService;
-import com.adnibog.gamecenter.service.UploadJobService;
+import com.adnibog.gamecenter.service.UploadService;
 
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(controllers = UploadController.class, excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
@@ -32,21 +30,15 @@ class UploadControllerTest {
   private MockMvc mockMvc;
 
   @MockBean
-  private StorageService storageService;
-
-  @MockBean
-  private JwtService jwtService;
-
-  @MockBean
-  private UploadJobService uploadJobService;
+  private UploadService uploadService;
 
   @Test
   void generateUploadUrl_Success() throws Exception {
     UploadUrlResponse response = new UploadUrlResponse("https://s3.amazonaws.com/test", "proj_123/file.csv");
 
-    when(storageService.generateUploadUrl("proj_123", "csv")).thenReturn(response);
+    when(uploadService.generateUploadUrl("proj_123", "folder1", "csv")).thenReturn(response);
 
-    mockMvc.perform(post("/projects/proj_123/uploads/presigned-url")
+    mockMvc.perform(post("/projects/proj_123/folders/folder1/uploads/presigned-url")
         .param("ext", "csv")
         .requestAttr("adminId", "admin_123"))
         .andExpect(status().isOk())

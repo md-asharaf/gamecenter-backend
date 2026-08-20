@@ -13,6 +13,7 @@ import java.util.Map;
 @JsonIgnoreProperties({"field1", "field2", "field3", "projects"})
 public class QuestionDto {
   private String id;
+  private String folderId;
   private Long createdAt;
   private Long updatedAt;
 

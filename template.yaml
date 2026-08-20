@@ -42,11 +42,22 @@ Resources:
           AttributeType: S
         - AttributeName: id
           AttributeType: S
+        - AttributeName: folderId
+          AttributeType: S
       KeySchema:
         - AttributeName: projectId
           KeyType: HASH
         - AttributeName: id
           KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: folder-index
+          KeySchema:
+            - AttributeName: folderId
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
 
   UsersTable:
@@ -68,6 +79,22 @@ Resources:
               KeyType: HASH
           Projection:
             ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+
+  FoldersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Folders
+      AttributeDefinitions:
+        - AttributeName: projectId
+          AttributeType: S
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: projectId
+          KeyType: HASH
+        - AttributeName: id
+          KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
 
   ProjectsTable:
@@ -151,6 +178,8 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref QuestionsTable
         - DynamoDBCrudPolicy:
+            TableName: !Ref FoldersTable
+        - DynamoDBCrudPolicy:
             TableName: !Ref ProjectsTable
         - DynamoDBCrudPolicy:
             TableName: !Ref UploadJobsTable
@@ -185,6 +214,8 @@ Resources:
             TableName: !Ref QuestionsTable
         - DynamoDBCrudPolicy:
             TableName: !Ref UploadJobsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FoldersTable
         - DynamoDBCrudPolicy:
             TableName: !Ref ProjectsTable
       Events:

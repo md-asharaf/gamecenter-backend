@@ -28,11 +28,16 @@ public class QuizService {
   public List<QuizQuestion> generateQuiz(String projectId) {
     ProjectDto projectDto = projectService.getProjectById(projectId);
 
+    String folderId = projectDto.getQuizFolderId();
+    if (folderId == null || folderId.trim().isEmpty()) {
+      throw new BadRequestException("This project does not have an active quiz folder configured. Admins must set one first.");
+    }
+
     int numberOfQuestions = projectDto.getNumberOfQuestionsInQuiz() != null ? projectDto.getNumberOfQuestionsInQuiz() : 10;
     String mainField = projectDto.getMainQuestionField() != null ? projectDto.getMainQuestionField() : "field1";
 
     int amountToFetch = Math.max(numberOfQuestions * 4, 50);
-    List<Question> allQuestions = new ArrayList<>(questionService.getRandomQuestions(projectId, amountToFetch));
+    List<Question> allQuestions = new ArrayList<>(questionService.getRandomQuestionsByFolder(projectId, folderId, amountToFetch));
 
     if (allQuestions.size() < numberOfQuestions) {
       throw new BadRequestException("Not enough questions in database to form a quiz");

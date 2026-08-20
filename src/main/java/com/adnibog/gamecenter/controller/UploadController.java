@@ -11,10 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import com.adnibog.gamecenter.dto.response.ApiResponse;
 import com.adnibog.gamecenter.dto.response.UploadUrlResponse;
 import com.adnibog.gamecenter.dto.model.UploadJobDto;
-import com.adnibog.gamecenter.service.storage.StorageService;
-import com.adnibog.gamecenter.entity.UploadJob;
-import com.adnibog.gamecenter.service.UploadJobService;
-import com.adnibog.gamecenter.exception.NotFoundException;
+import com.adnibog.gamecenter.service.UploadService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -23,36 +20,34 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Uploads", description = "Endpoints for generating presigned S3 URLs for bulk imports")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
-@RequestMapping("/projects/{projectId}/uploads")
+@RequestMapping("/projects/{projectId}/folders/{folderId}/uploads")
 public class UploadController {
-  private final StorageService storageService;
-  private final UploadJobService uploadJobService;
+  private final UploadService uploadService;
 
-  public UploadController(StorageService storageService, UploadJobService uploadJobService) {
-    this.storageService = storageService;
-    this.uploadJobService = uploadJobService;
+  public UploadController(UploadService uploadService) {
+    this.uploadService = uploadService;
   }
 
   @Operation(summary = "Generate Presigned URL", description = "Generates an S3 presigned URL for uploading .csv or .docx files.")
   @PostMapping("/presigned-url")
   public ResponseEntity<ApiResponse<UploadUrlResponse>> generateUploadUrl(
       @PathVariable String projectId,
+      @PathVariable String folderId,
       @RequestParam(required = false) String ext) {
 
-    UploadUrlResponse s3Info = storageService.generateUploadUrl(projectId, ext);
+    UploadUrlResponse s3Info = uploadService.generateUploadUrl(projectId, folderId, ext);
     return ResponseEntity.ok(ApiResponse.success(s3Info));
   }
-  
+
   @Operation(summary = "Get Upload Status", description = "Gets the status of a bulk upload job.")
   @GetMapping("/{key}/status")
   public ResponseEntity<ApiResponse<UploadJobDto>> getUploadStatus(
       @PathVariable String projectId,
+      @PathVariable String folderId,
       @PathVariable String key) {
-      
-    String fullKey = projectId + "/" + key;
-    UploadJob job = uploadJobService.getJob(fullKey)
-        .orElseThrow(() -> new NotFoundException("Upload job not found for key: " + fullKey));
-    UploadJobDto dto = new UploadJobDto(job.getId(), job.getProjectId(), job.getStatus(), job.getErrorMessage());
+
+    String fullKey = projectId + "/" + folderId + "/" + key;
+    UploadJobDto dto = uploadService.getJob(fullKey);
     return ResponseEntity.ok(ApiResponse.success(dto));
   }
 }

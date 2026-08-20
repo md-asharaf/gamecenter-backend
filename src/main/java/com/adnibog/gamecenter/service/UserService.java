@@ -18,8 +18,9 @@ import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.exception.ForbiddenException;
 import com.adnibog.gamecenter.mapper.UserMapper;
 import com.adnibog.gamecenter.repository.UserRepository;
-import com.adnibog.gamecenter.repository.AppStatsRepository;
 import java.util.Optional;
+import org.springframework.context.event.EventListener;
+import com.adnibog.gamecenter.event.ProjectDeletedEvent;
 
 import java.util.HashSet;
 import java.util.List;
@@ -33,14 +34,14 @@ import java.util.stream.Collectors;
 public class UserService {
 
   private final UserRepository userRepository;
-  private final AppStatsRepository appStatsRepository;
+  private final AppStatsService appStatsService;
   private final PasswordEncoder passwordEncoder;
   private final UserMapper userMapper;
 
-  public UserService(UserRepository userRepository, AppStatsRepository appStatsRepository,
+  public UserService(UserRepository userRepository, AppStatsService appStatsService,
       PasswordEncoder passwordEncoder, UserMapper userMapper) {
     this.userRepository = userRepository;
-    this.appStatsRepository = appStatsRepository;
+    this.appStatsService = appStatsService;
     this.passwordEncoder = passwordEncoder;
     this.userMapper = userMapper;
   }
@@ -75,7 +76,7 @@ public class UserService {
   }
 
   public int getTotalAdminCount() {
-    return (int) appStatsRepository.getTotalAdmins();
+    return (int) appStatsService.getTotalAdmins();
   }
 
   public UserDto updateAdmin(String currentAdminId, String id, UpdateAdminRequest req) {
@@ -139,7 +140,7 @@ public class UserService {
       throw new ForbiddenException("Deletion of another Super Admin is prohibited.");
     }
     userRepository.deleteById(id);
-    appStatsRepository.decrementTotalAdmins();
+    appStatsService.decrementTotalAdmins();
   }
 
   public void createAdmin(RegisterAdminRequest req) {
@@ -163,7 +164,7 @@ public class UserService {
         .build();
 
     userRepository.save(user);
-    appStatsRepository.incrementTotalAdmins();
+    appStatsService.incrementTotalAdmins();
   }
 
   public void addProjectToAdmin(String adminId, String projectId) {
@@ -179,13 +180,12 @@ public class UserService {
   }
 
   public void removeProjectFromAllAdmins(String projectId) {
-    userRepository.findAll().forEach(user -> {
-      Set<String> projectIds = user.getProjectIds();
-      if (projectIds != null && projectIds.remove(projectId)) {
-        user.setProjectIds(projectIds);
-        user.setUpdatedAt(System.currentTimeMillis());
-        userRepository.save(user);
-      }
-    });
+    userRepository.removeProjectFromAllAdmins(projectId);
+  }
+
+  @EventListener
+  public void handleProjectDeletedEvent(ProjectDeletedEvent event) {
+    log.info("Handling ProjectDeletedEvent in UserService for project {}", event.getProjectId());
+    removeProjectFromAllAdmins(event.getProjectId());
   }
 }

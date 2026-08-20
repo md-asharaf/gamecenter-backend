@@ -17,11 +17,15 @@ public interface QuestionRepository {
 
   void deleteAllByProjectId(String projectId);
 
+  void deleteAllByFolderId(String projectId, String folderId);
+
+  void deleteMultiple(String projectId, List<String> questionIds);
+
   QuestionPage findQuestions(String projectId, PaginationRequest pageReq);
+  
+  QuestionPage findQuestionsByFolderId(String projectId, String folderId, PaginationRequest pageReq);
 
-  List<Question> findAll(String projectId);
-
-  List<Question> findRandomQuestions(String projectId, int amount);
+  List<Question> findRandomQuestionsByFolderId(String projectId, String folderId, int amount);
 
   long countByProjectId(String projectId);
 }

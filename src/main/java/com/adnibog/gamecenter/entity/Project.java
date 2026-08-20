@@ -22,6 +22,7 @@ public class Project {
   private String field1Label;
   private String field2Label;
   private String field3Label;
+  private String quizFolderId;
   @Builder.Default
   private String type = "PROJECT";
   private Long createdAt;

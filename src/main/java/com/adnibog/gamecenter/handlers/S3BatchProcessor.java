@@ -39,11 +39,16 @@ public class S3BatchProcessor {
       String key = record.getS3().getObject().getKey();
 
       String projectId = "default";
-      if (key.contains("/")) {
-        projectId = key.substring(0, key.indexOf("/"));
+      String folderId = "default";
+      String[] parts = key.split("/");
+      if (parts.length >= 3) {
+        projectId = parts[0];
+        folderId = parts[1];
+      } else if (parts.length == 2) {
+        projectId = parts[0];
       }
 
-      log.info("Processing file from S3: bucket={}, key={}, projectId={}", bucket, key, projectId);
+      log.info("Processing file from S3: bucket={}, key={}, projectId={}, folderId={}", bucket, key, projectId, folderId);
       uploadJobService.updateJobStatus(key, "PROCESSING", null);
 
       try (InputStream s3Stream = storageService.getFileStream(bucket, key)) {
@@ -59,7 +64,7 @@ public class S3BatchProcessor {
 
         log.info("Parsed {} questions. Saving to database...", questions.size());
 
-        questionService.saveQuestionsBatch(projectId, questions);
+        questionService.saveQuestionsBatch(projectId, folderId, questions);
 
         log.info("Successfully saved {} questions.", questions.size());
         uploadJobService.updateJobStatus(key, "COMPLETED", null);

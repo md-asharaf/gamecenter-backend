@@ -11,6 +11,7 @@ import com.adnibog.gamecenter.dto.response.QuestionPageResponse;
 import com.adnibog.gamecenter.dto.model.ProjectDto;
 import com.adnibog.gamecenter.entity.Question;
 import com.adnibog.gamecenter.event.ProjectDeletedEvent;
+import com.adnibog.gamecenter.event.FolderDeletedEvent;
 import com.adnibog.gamecenter.exception.BadRequestException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.QuestionMapper;
@@ -39,9 +40,9 @@ public class QuestionService {
     this.projectService = projectService;
   }
 
-  public QuestionPageResponse getQuestions(String projectId, PaginationRequest pageReq) {
+  public QuestionPageResponse getQuestions(String projectId, String folderId, PaginationRequest pageReq) {
     ProjectDto project = projectService.getProjectById(projectId);
-    QuestionPage page = questionRepository.findQuestions(projectId, pageReq);
+    QuestionPage page = questionRepository.findQuestionsByFolderId(projectId, folderId, pageReq);
     List<QuestionDto> dtos = page.getItems().stream()
         .map(q -> questionMapper.toDto(q, project))
         .collect(Collectors.toList());
@@ -59,7 +60,7 @@ public class QuestionService {
     return questionRepository.countByProjectId(projectId);
   }
 
-  public QuestionDto createQuestion(String projectId, CreateQuestionRequest req) {
+  public QuestionDto createQuestion(String projectId, String folderId, CreateQuestionRequest req) {
     ProjectDto project = projectService.getProjectById(projectId);
     Map<String, String> dynamicFields = req.getDynamicFields();
 
@@ -79,6 +80,7 @@ public class QuestionService {
     long now = System.currentTimeMillis();
     Question q = new Question();
     q.setProjectId(projectId);
+    q.setFolderId(folderId);
     q.setId(UUID.randomUUID().toString());
     q.setField1(field1);
     q.setField2(field2);
@@ -91,10 +93,11 @@ public class QuestionService {
     return questionMapper.toDto(q, project);
   }
 
-  public void saveQuestion(String projectId, Question q) {
+  public void saveQuestion(String projectId, String folderId, Question q) {
     projectService.getProjectById(projectId);
     long now = System.currentTimeMillis();
     q.setProjectId(projectId);
+    q.setFolderId(folderId);
     if (q.getId() == null || q.getId().isBlank()) {
       q.setId(java.util.UUID.randomUUID().toString());
       q.setCreatedAt(now);
@@ -106,11 +109,12 @@ public class QuestionService {
     log.info("Saved question {} for project {}", q.getId(), projectId);
   }
 
-  public void saveQuestionsBatch(String projectId, List<Question> questions) {
+  public void saveQuestionsBatch(String projectId, String folderId, List<Question> questions) {
     projectService.getProjectById(projectId);
     long now = System.currentTimeMillis();
     for (Question q : questions) {
       q.setProjectId(projectId);
+      q.setFolderId(folderId);
       if (q.getId() == null || q.getId().isBlank()) {
         q.setId(java.util.UUID.randomUUID().toString());
         q.setCreatedAt(now);
@@ -162,14 +166,30 @@ public class QuestionService {
     log.info("Deleted question {} in project {}", id, projectId);
   }
 
-  @EventListener
-  public void handleProjectDeletedEvent(ProjectDeletedEvent event) {
-    String projectId = event.getProjectId();
-    log.info("Handling ProjectDeletedEvent for project {}", projectId);
-    questionRepository.deleteAllByProjectId(projectId);
+  public void deleteQuestions(String projectId, List<String> questionIds) {
+    if (questionIds == null || questionIds.isEmpty()) return;
+    questionRepository.deleteMultiple(projectId, questionIds);
+    log.info("Deleted {} questions in project {}", questionIds.size(), projectId);
   }
 
-  public List<Question> getRandomQuestions(String projectId, int amountToFetch) {
-    return questionRepository.findRandomQuestions(projectId, amountToFetch);
+  public void deleteAllByFolderId(String projectId, String folderId) {
+    questionRepository.deleteAllByFolderId(projectId, folderId);
+    log.info("Deleted all questions in folder {} for project {}", folderId, projectId);
+  }
+
+  @EventListener
+  public void handleProjectDeletedEvent(ProjectDeletedEvent event) {
+    log.info("Handling ProjectDeletedEvent for project {}", event.getProjectId());
+    questionRepository.deleteAllByProjectId(event.getProjectId());
+  }
+
+  @EventListener
+  public void handleFolderDeletedEvent(FolderDeletedEvent event) {
+    log.info("Handling FolderDeletedEvent for folder {} in project {}", event.getFolderId(), event.getProjectId());
+    deleteAllByFolderId(event.getProjectId(), event.getFolderId());
+  }
+
+  public List<Question> getRandomQuestionsByFolder(String projectId, String folderId, int amountToFetch) {
+    return questionRepository.findRandomQuestionsByFolderId(projectId, folderId, amountToFetch);
   }
 }

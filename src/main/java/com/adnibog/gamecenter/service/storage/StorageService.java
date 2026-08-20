@@ -5,7 +5,7 @@ import java.io.InputStream;
 import com.adnibog.gamecenter.dto.response.UploadUrlResponse;
 
 public interface StorageService {
-  UploadUrlResponse generateUploadUrl(String projectId, String ext);
+  UploadUrlResponse generateUploadUrl(String projectId, String folderId, String ext);
 
   InputStream getFileStream(String bucket, String key);
 }

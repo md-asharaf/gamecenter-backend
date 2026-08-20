@@ -67,7 +67,7 @@ class QuestionServiceTest {
 
     when(questionMapper.toDto(any(Question.class), eq(projectDto))).thenReturn(expectedDto);
 
-    QuestionDto result = questionService.createQuestion(projectId, req);
+    QuestionDto result = questionService.createQuestion(projectId, "folder1", req);
 
     assertNotNull(result);
     verify(questionRepository).save(any(Question.class));
@@ -86,7 +86,7 @@ class QuestionServiceTest {
     CreateQuestionRequest req = new CreateQuestionRequest();
     req.setDynamicFields(new HashMap<>(Map.of("Meaning", "A fruit")));
 
-    assertThrows(BadRequestException.class, () -> questionService.createQuestion(projectId, req));
+    assertThrows(BadRequestException.class, () -> questionService.createQuestion(projectId, "folder1", req));
     verify(questionRepository, never()).save(any());
   }
 

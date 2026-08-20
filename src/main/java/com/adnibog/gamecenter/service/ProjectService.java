@@ -16,7 +16,6 @@ import com.adnibog.gamecenter.exception.ConflictException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.ProjectMapper;
 import com.adnibog.gamecenter.repository.ProjectRepository;
-import com.adnibog.gamecenter.repository.AppStatsRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import com.adnibog.gamecenter.event.ProjectDeletedEvent;
 
@@ -37,16 +36,16 @@ public class ProjectService {
   private final UserService userService;
   private final ProjectMapper projectMapper;
   private final ApplicationEventPublisher eventPublisher;
-  private final AppStatsRepository appStatsRepository;
+  private final AppStatsService appStatsService;
 
   public ProjectService(ProjectRepository projectRepository,
       UserService userService, ProjectMapper projectMapper,
-      ApplicationEventPublisher eventPublisher, AppStatsRepository appStatsRepository) {
+      ApplicationEventPublisher eventPublisher, AppStatsService appStatsService) {
     this.projectRepository = projectRepository;
     this.userService = userService;
     this.projectMapper = projectMapper;
     this.eventPublisher = eventPublisher;
-    this.appStatsRepository = appStatsRepository;
+    this.appStatsService = appStatsService;
   }
 
   private void validateFieldLabel(String label) {
@@ -146,20 +145,6 @@ public class ProjectService {
     return new ProjectPageResponse(paged, nextKey);
   }
 
-  public List<ProjectDto> getAllProjectsForAdmin(String adminId) {
-    User admin = userService.getUserEntityById(adminId);
-    if (admin.getRole() == Role.SUPER_ADMIN) {
-      return projectRepository.findAll().stream().map(projectMapper::toDto).collect(Collectors.toList());
-    }
-    if (admin.getProjectIds() == null || admin.getProjectIds().isEmpty()) {
-      return new ArrayList<>();
-    }
-    return admin.getProjectIds().stream()
-        .map(id -> projectRepository.findById(id))
-        .filter(opt -> opt.isPresent())
-        .map(opt -> projectMapper.toDto(opt.get()))
-        .collect(Collectors.toList());
-  }
 
   public List<ProjectDto> getMostRecentProjectsForAdmin(String adminId, int limit) {
     User admin = userService.getUserEntityById(adminId);
@@ -189,7 +174,7 @@ public class ProjectService {
   public long getTotalProjectsForAdmin(String adminId) {
     User admin = userService.getUserEntityById(adminId);
     if (admin.getRole() == Role.SUPER_ADMIN) {
-      return appStatsRepository.getTotalProjects();
+      return appStatsService.getTotalProjects();
     }
     return admin.getProjectIds() != null ? admin.getProjectIds().size() : 0;
   }
@@ -235,12 +220,22 @@ public class ProjectService {
       validateFieldLabel(req.getField3Label());
       project.setField3Label(req.getField3Label());
     }
+    if (req.getQuizFolderId() != null) {
+      project.setQuizFolderId(req.getQuizFolderId());
+    }
 
     project.setUpdatedAt(System.currentTimeMillis());
     projectRepository.save(project);
 
     log.info("Project '{}' ({}) successfully updated", project.getName(), project.getId());
     return projectMapper.toDto(project);
+  }
+
+  public void updateQuizFolderId(String projectId, String folderId) {
+    Project project = getProjectEntityById(projectId);
+    project.setQuizFolderId(folderId);
+    project.setUpdatedAt(System.currentTimeMillis());
+    projectRepository.save(project);
   }
 
   public void deleteProject(String adminId, String projectId) {
@@ -253,11 +248,9 @@ public class ProjectService {
 
     getProjectEntityById(projectId);
 
-    appStatsRepository.decrementTotalProjects();
-
     eventPublisher.publishEvent(new ProjectDeletedEvent(this, projectId));
+
     projectRepository.deleteById(projectId);
-    userService.removeProjectFromAllAdmins(projectId);
 
     log.info("Project {} successfully deleted by Admin {}", projectId, adminId);
   }

@@ -49,7 +49,7 @@ class S3ServiceTest {
     when(presignedReq.url()).thenReturn(URI.create("https://s3.amazonaws.com/test").toURL());
     when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedReq);
 
-    UploadUrlResponse result = s3Service.generateUploadUrl(projectId, ext);
+    UploadUrlResponse result = s3Service.generateUploadUrl(projectId, "folder1", ext);
 
     assertNotNull(result);
     assertEquals("https://s3.amazonaws.com/test", result.getUrl());
@@ -66,7 +66,7 @@ class S3ServiceTest {
     when(presignedReq.url()).thenReturn(URI.create("https://s3.amazonaws.com/test").toURL());
     when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedReq);
 
-    UploadUrlResponse result = s3Service.generateUploadUrl(projectId, ext);
+    UploadUrlResponse result = s3Service.generateUploadUrl(projectId, "folder1", ext);
 
     assertNotNull(result);
     assertEquals("https://s3.amazonaws.com/test", result.getUrl());

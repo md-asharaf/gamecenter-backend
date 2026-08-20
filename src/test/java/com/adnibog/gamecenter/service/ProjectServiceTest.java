@@ -24,7 +24,6 @@ import com.adnibog.gamecenter.exception.ConflictException;
 import com.adnibog.gamecenter.exception.ForbiddenException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.ProjectMapper;
-import com.adnibog.gamecenter.repository.AppStatsRepository;
 import com.adnibog.gamecenter.repository.ProjectRepository;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -46,7 +45,7 @@ class ProjectServiceTest {
   private ProjectMapper projectMapper;
 
   @Mock
-  private AppStatsRepository appStatsRepository;
+  private AppStatsService appStatsService;
 
   private ProjectService projectService;
 
@@ -54,7 +53,7 @@ class ProjectServiceTest {
   void setUp() {
     MockitoAnnotations.openMocks(this);
     projectService = new ProjectService(projectRepository, userService, projectMapper, eventPublisher,
-        appStatsRepository);
+        appStatsService);
   }
 
   @Test
@@ -152,7 +151,6 @@ class ProjectServiceTest {
     ArgumentCaptor<ProjectDeletedEvent> captor = ArgumentCaptor.forClass(ProjectDeletedEvent.class);
     verify(eventPublisher).publishEvent(captor.capture());
     verify(projectRepository).deleteById("proj1");
-    verify(userService).removeProjectFromAllAdmins("proj1");
   }
 
   @Test

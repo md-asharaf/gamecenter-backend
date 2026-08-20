@@ -1,6 +1,5 @@
 package com.adnibog.gamecenter.repository;
 
-import java.util.List;
 import java.util.Optional;
 
 import com.adnibog.gamecenter.dto.request.PaginationRequest;
@@ -14,7 +13,7 @@ public interface UserRepository {
 
   void save(User user);
 
-  List<User> findAll();
+  void removeProjectFromAllAdmins(String projectId);
 
   long countAll();
 

@@ -24,7 +24,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Repository
 public class DynamoDbProjectRepository implements ProjectRepository {
@@ -56,11 +55,6 @@ public class DynamoDbProjectRepository implements ProjectRepository {
   @Override
   public void deleteById(String projectId) {
     projectTable.deleteItem(Key.builder().partitionValue(projectId).build());
-  }
-
-  @Override
-  public List<Project> findAll() {
-    return projectTable.scan().items().stream().collect(Collectors.toList());
   }
 
   @Override

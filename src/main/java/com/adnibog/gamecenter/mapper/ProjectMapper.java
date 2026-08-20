@@ -19,6 +19,7 @@ public class ProjectMapper {
         .field1Label(project.getField1Label())
         .field2Label(project.getField2Label())
         .field3Label(project.getField3Label())
+        .quizFolderId(project.getQuizFolderId())
         .createdAt(project.getCreatedAt())
         .updatedAt(project.getUpdatedAt())
         .build();

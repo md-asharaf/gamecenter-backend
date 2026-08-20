@@ -19,6 +19,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
 import software.amazon.awssdk.services.dynamodb.model.Select;
+import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public class DynamoDbUserRepository implements UserRepository {
@@ -57,8 +59,26 @@ public class DynamoDbUserRepository implements UserRepository {
   }
 
   @Override
-  public java.util.List<User> findAll() {
-    return new java.util.ArrayList<>(userTable.scan().items().stream().toList());
+  public void removeProjectFromAllAdmins(String projectId) {
+    Map<String, AttributeValue> expressionValues = new HashMap<>();
+    expressionValues.put(":projectId", AttributeValue.builder().s(projectId).build());
+
+    Expression filterExpression = Expression.builder()
+        .expression("contains(projectIds, :projectId)")
+        .expressionValues(expressionValues)
+        .build();
+
+    SdkIterable<Page<User>> pagedResults = userTable.scan(r -> r.filterExpression(filterExpression));
+    for (Page<User> page : pagedResults) {
+      for (User user : page.items()) {
+        Set<String> projectIds = user.getProjectIds();
+        if (projectIds != null && projectIds.remove(projectId)) {
+          user.setProjectIds(projectIds);
+          user.setUpdatedAt(System.currentTimeMillis());
+          userTable.putItem(user);
+        }
+      }
+    }
   }
 
   @Override

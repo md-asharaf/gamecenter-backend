@@ -20,6 +20,7 @@ public class ProjectDto {
   private String field1Label;
   private String field2Label;
   private String field3Label;
+  private String quizFolderId;
   private Long createdAt;
   private Long updatedAt;
 

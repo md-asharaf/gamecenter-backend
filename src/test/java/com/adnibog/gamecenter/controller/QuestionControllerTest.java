@@ -53,12 +53,12 @@ class QuestionControllerTest {
     questionDto.setField1("Apple");
     questionDto.setProjects(projectDto);
 
-    when(questionService.createQuestion(eq("proj_123"), any(CreateQuestionRequest.class)))
+    when(questionService.createQuestion(eq("proj_123"), eq("folder1"), any(CreateQuestionRequest.class)))
         .thenReturn(questionDto);
 
     String json = "{\"dynamicFields\":{\"Word\":\"Apple\"}}";
 
-    mockMvc.perform(post("/projects/proj_123/questions")
+    mockMvc.perform(post("/projects/proj_123/folders/folder1/questions")
         .requestAttr("adminId", "admin_123")
         .contentType(MediaType.APPLICATION_JSON_VALUE)
         .content(json))
@@ -82,7 +82,7 @@ class QuestionControllerTest {
 
     String json = "{\"dynamicFields\":{\"Word\":\"Banana\"}}";
 
-    mockMvc.perform(put("/projects/proj_123/questions/q_123")
+    mockMvc.perform(put("/projects/proj_123/folders/folder1/questions/q_123")
         .requestAttr("adminId", "admin_123")
         .contentType(MediaType.APPLICATION_JSON_VALUE)
         .content(json))

@@ -13,13 +13,10 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortK
 @AllArgsConstructor
 @Builder
 @DynamoDbBean
-public class Question {
+public class Folder {
   private String projectId;
-  private String folderId;
   private String id;
-  private String field1;
-  private String field2;
-  private String field3;
+  private String name;
   private Long createdAt;
   private Long updatedAt;
 

@@ -14,6 +14,7 @@ public class QuestionMapper {
     }
     return QuestionDto.builder()
         .id(q.getId())
+        .folderId(q.getFolderId())
         .field1(q.getField1())
         .field2(q.getField2())
         .field3(q.getField3())

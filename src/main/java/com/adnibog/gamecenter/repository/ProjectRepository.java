@@ -16,8 +16,6 @@ public interface ProjectRepository {
 
   void deleteById(String projectId);
 
-  List<Project> findAll();
-
   ProjectPage findProjects(PaginationRequest pageReq);
 
   List<Project> getMostRecentProjects(int limit);

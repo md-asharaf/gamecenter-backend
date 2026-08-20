@@ -20,7 +20,7 @@ import com.adnibog.gamecenter.dto.request.PaginationRequest;
 @Tag(name = "Questions", description = "Endpoints for managing project questions")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
-@RequestMapping("/projects/{projectId}/questions")
+@RequestMapping("/projects/{projectId}/folders/{folderId}/questions")
 public class QuestionController {
 
   private final QuestionService questionService;
@@ -33,8 +33,9 @@ public class QuestionController {
   @GetMapping
   public ResponseEntity<ApiResponse<QuestionPageResponse>> getQuestions(
       @PathVariable String projectId,
+      @PathVariable String folderId,
       @ModelAttribute PaginationRequest pageReq) {
-    QuestionPageResponse response = questionService.getQuestions(projectId, pageReq);
+    QuestionPageResponse response = questionService.getQuestions(projectId, folderId, pageReq);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
@@ -42,15 +43,16 @@ public class QuestionController {
   @PostMapping
   public ResponseEntity<ApiResponse<QuestionDto>> createQuestion(
       @PathVariable String projectId,
+      @PathVariable String folderId,
       @Valid @RequestBody CreateQuestionRequest req) {
-    QuestionDto created = questionService.createQuestion(projectId, req);
+    QuestionDto created = questionService.createQuestion(projectId, folderId, req);
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(ApiResponse.success(created, "Question created successfully"));
   }
 
   @Operation(summary = "Get Question by ID", description = "Fetches a single question.")
   @GetMapping("/{id}")
-  public ResponseEntity<ApiResponse<QuestionDto>> getQuestion(@PathVariable String projectId, @PathVariable String id) {
+  public ResponseEntity<ApiResponse<QuestionDto>> getQuestion(@PathVariable String projectId, @PathVariable String folderId, @PathVariable String id) {
     QuestionDto q = questionService.getQuestionById(projectId, id);
     return ResponseEntity.ok(ApiResponse.success(q));
   }
@@ -59,6 +61,7 @@ public class QuestionController {
   @PutMapping("/{id}")
   public ResponseEntity<ApiResponse<QuestionDto>> updateQuestion(
       @PathVariable String projectId,
+      @PathVariable String folderId,
       @PathVariable String id,
       @Valid @RequestBody UpdateQuestionRequest req) {
     QuestionDto updated = questionService.updateQuestion(projectId, id, req);
@@ -67,9 +70,18 @@ public class QuestionController {
 
   @Operation(summary = "Delete Question", description = "Deletes a question by ID.")
   @DeleteMapping("/{id}")
-  public ResponseEntity<ApiResponse<Void>> deleteQuestion(@PathVariable String projectId, @PathVariable String id) {
+  public ResponseEntity<ApiResponse<Void>> deleteQuestion(@PathVariable String projectId, @PathVariable String folderId, @PathVariable String id) {
     questionService.deleteQuestion(projectId, id);
     return ResponseEntity.ok(ApiResponse.success(null, "Question deleted successfully"));
   }
 
+  @Operation(summary = "Bulk Delete Questions", description = "Deletes multiple questions by ID.")
+  @DeleteMapping
+  public ResponseEntity<ApiResponse<Void>> deleteQuestions(
+      @PathVariable String projectId,
+      @PathVariable String folderId,
+      @RequestBody java.util.List<String> questionIds) {
+    questionService.deleteQuestions(projectId, questionIds);
+    return ResponseEntity.ok(ApiResponse.success(null, "Questions deleted successfully"));
+  }
 }
