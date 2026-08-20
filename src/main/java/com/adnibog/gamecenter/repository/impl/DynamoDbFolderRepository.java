@@ -12,12 +12,12 @@ import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
-import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import com.adnibog.gamecenter.dto.request.PaginationRequest;
 import com.adnibog.gamecenter.repository.pagination.FolderPage;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -77,7 +77,8 @@ public class DynamoDbFolderRepository implements FolderRepository {
         .expressionValues(expressionValues)
         .build();
 
-    for (Page<Folder> page : folderTable.query(r -> r.queryConditional(conditional).filterExpression(filterExpression))) {
+    for (Page<Folder> page : folderTable
+        .query(r -> r.queryConditional(conditional).filterExpression(filterExpression))) {
       for (Folder f : page.items()) {
         if (excludeFolderId == null || !f.getId().equals(excludeFolderId)) {
           return true;
@@ -98,28 +99,53 @@ public class DynamoDbFolderRepository implements FolderRepository {
       startKey.put("id", AttributeValue.builder().s(req.getLastEvaluatedKey()).build());
     }
 
-    SdkIterable<Page<Folder>> pagedResults;
-    if (startKey != null) {
-      final Map<String, AttributeValue> finalStartKey = startKey;
-      pagedResults = folderTable.query(r -> {
-        r.queryConditional(conditional).limit(req.getLimit()).exclusiveStartKey(finalStartKey);
-      });
-    } else {
-      pagedResults = folderTable.query(r -> {
-        r.queryConditional(conditional).limit(req.getLimit());
-      });
-    }
+    Expression filterExpression = null;
+    if (req.getSearch() != null && !req.getSearch().trim().isEmpty()) {
+      Map<String, AttributeValue> expressionValues = new HashMap<>();
+      expressionValues.put(":searchKeyword", AttributeValue.builder().s(req.getSearch()).build());
+      Map<String, String> expressionNames = new HashMap<>();
+      expressionNames.put("#name", "name");
 
-    Iterator<Page<Folder>> iterator = pagedResults.iterator();
-    if (iterator.hasNext()) {
+      filterExpression = Expression.builder()
+          .expression("contains(#name, :searchKeyword)")
+          .expressionNames(expressionNames)
+          .expressionValues(expressionValues)
+          .build();
+    }
+    final Expression finalFilterExpression = filterExpression;
+    final Map<String, AttributeValue> finalStartKey = startKey;
+
+    Iterator<Page<Folder>> iterator = folderTable.query(r -> {
+      r.queryConditional(conditional);
+      if (finalStartKey != null) {
+        r.exclusiveStartKey(finalStartKey);
+      }
+      if (finalFilterExpression != null) {
+        r.filterExpression(finalFilterExpression);
+      }
+    }).iterator();
+
+    List<Folder> resultItems = new ArrayList<>();
+    String nextKey = null;
+
+    while (iterator.hasNext() && resultItems.size() < req.getLimit()) {
       Page<Folder> page = iterator.next();
-      String nextKey = null;
+      for (Folder item : page.items()) {
+        resultItems.add(item);
+        if (resultItems.size() == req.getLimit()) {
+          break;
+        }
+      }
       if (page.lastEvaluatedKey() != null && page.lastEvaluatedKey().containsKey("id")) {
         nextKey = page.lastEvaluatedKey().get("id").s();
+      } else {
+        nextKey = null;
       }
-      return new FolderPage(page.items(), nextKey);
+      if (resultItems.size() == req.getLimit()) {
+        break;
+      }
     }
 
-    return new FolderPage(List.of(), null);
+    return new FolderPage(resultItems, nextKey);
   }
 }

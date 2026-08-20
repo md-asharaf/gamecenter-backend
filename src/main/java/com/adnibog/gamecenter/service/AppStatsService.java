@@ -27,4 +27,10 @@ public class AppStatsService {
     log.info("Handling ProjectDeletedEvent in AppStatsService for project {}", event.getProjectId());
     decrementTotalProjects();
   }
+
+  @EventListener
+  public void handleProjectCreatedEvent(com.adnibog.gamecenter.event.ProjectCreatedEvent event) {
+    log.info("Handling ProjectCreatedEvent in AppStatsService for project {}", event.getProjectId());
+    incrementTotalProjects();
+  }
 }

@@ -28,11 +28,13 @@ public class FolderController {
   public ResponseEntity<FolderPageResponse> listFolders(
       @PathVariable String projectId,
       @RequestParam(defaultValue = "10") int limit,
-      @RequestParam(required = false) String lastEvaluatedKey) {
-    log.info("Request to list folders for project {} with limit {}", projectId, limit);
+      @RequestParam(required = false) String lastEvaluatedKey,
+      @RequestParam(required = false) String search) {
+    log.info("Request to list folders for project {} with limit {} and search {}", projectId, limit, search);
     PaginationRequest req = new PaginationRequest();
     req.setLimit(limit);
     req.setLastEvaluatedKey(lastEvaluatedKey);
+    req.setSearch(search);
     return ResponseEntity.ok(folderService.listFolders(projectId, req));
   }
 

@@ -100,6 +100,7 @@ public class ProjectService {
     project.setUpdatedAt(now);
 
     projectRepository.save(project);
+    eventPublisher.publishEvent(new com.adnibog.gamecenter.event.ProjectCreatedEvent(this, id));
 
     userService.addProjectToAdmin(adminId, id);
 
