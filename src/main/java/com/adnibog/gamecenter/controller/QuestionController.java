@@ -10,6 +10,8 @@ import com.adnibog.gamecenter.dto.response.ApiResponse;
 import com.adnibog.gamecenter.dto.model.QuestionDto;
 import com.adnibog.gamecenter.dto.response.QuestionPageResponse;
 import com.adnibog.gamecenter.service.QuestionService;
+import com.adnibog.gamecenter.service.ProjectService;
+import com.adnibog.gamecenter.dto.model.ProjectDto;
 
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,9 +26,11 @@ import com.adnibog.gamecenter.dto.request.PaginationRequest;
 public class QuestionController {
 
   private final QuestionService questionService;
+  private final ProjectService projectService;
 
-  public QuestionController(QuestionService questionService) {
+  public QuestionController(QuestionService questionService, ProjectService projectService) {
     this.questionService = questionService;
+    this.projectService = projectService;
   }
 
   @Operation(summary = "Get Questions", description = "Retrieves a paginated list of questions for a project.")
@@ -35,7 +39,8 @@ public class QuestionController {
       @PathVariable String projectId,
       @PathVariable String folderId,
       @ModelAttribute PaginationRequest pageReq) {
-    QuestionPageResponse response = questionService.getQuestions(projectId, folderId, pageReq);
+    ProjectDto project = projectService.getProjectById(projectId);
+    QuestionPageResponse response = questionService.getQuestions(project, folderId, pageReq);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
@@ -45,7 +50,8 @@ public class QuestionController {
       @PathVariable String projectId,
       @PathVariable String folderId,
       @Valid @RequestBody CreateQuestionRequest req) {
-    QuestionDto created = questionService.createQuestion(projectId, folderId, req);
+    ProjectDto project = projectService.getProjectById(projectId);
+    QuestionDto created = questionService.createQuestion(project, folderId, req);
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(ApiResponse.success(created, "Question created successfully"));
   }
@@ -53,7 +59,8 @@ public class QuestionController {
   @Operation(summary = "Get Question by ID", description = "Fetches a single question.")
   @GetMapping("/{id}")
   public ResponseEntity<ApiResponse<QuestionDto>> getQuestion(@PathVariable String projectId, @PathVariable String folderId, @PathVariable String id) {
-    QuestionDto q = questionService.getQuestionById(projectId, id);
+    ProjectDto project = projectService.getProjectById(projectId);
+    QuestionDto q = questionService.getQuestionById(project, id);
     return ResponseEntity.ok(ApiResponse.success(q));
   }
 
@@ -64,7 +71,8 @@ public class QuestionController {
       @PathVariable String folderId,
       @PathVariable String id,
       @Valid @RequestBody UpdateQuestionRequest req) {
-    QuestionDto updated = questionService.updateQuestion(projectId, id, req);
+    ProjectDto project = projectService.getProjectById(projectId);
+    QuestionDto updated = questionService.updateQuestion(project, id, req);
     return ResponseEntity.ok(ApiResponse.success(updated, "Question updated successfully"));
   }
 

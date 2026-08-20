@@ -28,6 +28,7 @@ import com.adnibog.gamecenter.interceptor.AdminAuthInterceptor;
 import com.adnibog.gamecenter.interceptor.ProjectInterceptor;
 import com.adnibog.gamecenter.service.JwtService;
 import com.adnibog.gamecenter.service.QuestionService;
+import com.adnibog.gamecenter.service.ProjectService;
 
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(controllers = QuestionController.class, excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
@@ -41,19 +42,25 @@ class QuestionControllerTest {
   private QuestionService questionService;
 
   @MockBean
+  private ProjectService projectService;
+
+  @MockBean
   private JwtService jwtService;
 
   @Test
   void createQuestion_Success() throws Exception {
     ProjectDto projectDto = new ProjectDto();
+    projectDto.setId("proj_123");
     projectDto.setField1Label("Word");
+    
+    when(projectService.getProjectById("proj_123")).thenReturn(projectDto);
 
     QuestionDto questionDto = QuestionDto.builder().build();
     questionDto.setId("q_123");
     questionDto.setField1("Apple");
     questionDto.setProjects(projectDto);
 
-    when(questionService.createQuestion(eq("proj_123"), eq("folder1"), any(CreateQuestionRequest.class)))
+    when(questionService.createQuestion(any(ProjectDto.class), eq("folder1"), any(CreateQuestionRequest.class)))
         .thenReturn(questionDto);
 
     String json = "{\"dynamicFields\":{\"Word\":\"Apple\"}}";
@@ -70,14 +77,16 @@ class QuestionControllerTest {
   @Test
   void updateQuestion_Success() throws Exception {
     ProjectDto projectDto = new ProjectDto();
+    projectDto.setId("proj_123");
     projectDto.setField1Label("Word");
+    when(projectService.getProjectById("proj_123")).thenReturn(projectDto);
 
     QuestionDto questionDto = QuestionDto.builder().build();
     questionDto.setId("q_123");
     questionDto.setField1("Banana");
     questionDto.setProjects(projectDto);
 
-    when(questionService.updateQuestion(eq("proj_123"), eq("q_123"), any(UpdateQuestionRequest.class)))
+    when(questionService.updateQuestion(any(ProjectDto.class), eq("q_123"), any(UpdateQuestionRequest.class)))
         .thenReturn(questionDto);
 
     String json = "{\"dynamicFields\":{\"Word\":\"Banana\"}}";

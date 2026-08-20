@@ -22,19 +22,25 @@ public class DashboardService {
   private final ProjectService projectService;
   private final AppStatsService appStatsService;
   private final QuestionService questionService;
+  private final UserService userService;
 
   public DashboardService(ProjectService projectService, AppStatsService appStatsService,
-      QuestionService questionService) {
+      QuestionService questionService, UserService userService) {
     this.projectService = projectService;
     this.appStatsService = appStatsService;
     this.questionService = questionService;
+    this.userService = userService;
   }
 
   public DashboardStatsResponse getDashboardStats(String adminId) {
-    long totalProjects = projectService.getTotalProjectsForAdmin(adminId);
+    com.adnibog.gamecenter.entity.User admin = userService.getUserEntityById(adminId);
+    boolean isSuperAdmin = admin.getRole() == com.adnibog.gamecenter.entity.Role.SUPER_ADMIN;
+    java.util.Set<String> projectIds = admin.getProjectIds();
+
+    long totalProjects = isSuperAdmin ? appStatsService.getTotalProjects() : projectService.getTotalProjects(projectIds);
     Integer totalAdmins = (int) appStatsService.getTotalAdmins();
 
-    List<ProjectDto> recentProjects = projectService.getMostRecentProjectsForAdmin(adminId, 5);
+    List<ProjectDto> recentProjects = projectService.getMostRecentProjects(isSuperAdmin, projectIds, 5);
 
     List<ProjectStat> projectStats = new ArrayList<>();
     for (ProjectDto p : recentProjects) {
@@ -42,7 +48,7 @@ public class DashboardService {
       projectStats.add(new ProjectStat(p.getId(), p.getName(), qCount));
     }
 
-    List<ProjectDto> allRecentProjects = projectService.getMostRecentProjectsForAdmin(adminId, 100);
+    List<ProjectDto> allRecentProjects = projectService.getMostRecentProjects(isSuperAdmin, projectIds, 100);
     Map<String, Integer> growthMap = new LinkedHashMap<>();
     LocalDate now = java.time.LocalDate.now();
     for (int i = 5; i >= 0; i--) {

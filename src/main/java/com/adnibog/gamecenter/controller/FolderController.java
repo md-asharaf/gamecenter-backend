@@ -4,6 +4,7 @@ import com.adnibog.gamecenter.dto.model.FolderDto;
 import com.adnibog.gamecenter.dto.request.CreateFolderRequest;
 import com.adnibog.gamecenter.dto.request.UpdateFolderRequest;
 import com.adnibog.gamecenter.service.FolderService;
+import com.adnibog.gamecenter.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -19,9 +20,11 @@ import com.adnibog.gamecenter.dto.response.FolderPageResponse;
 public class FolderController {
 
   private final FolderService folderService;
+  private final ProjectService projectService;
 
-  public FolderController(FolderService folderService) {
+  public FolderController(FolderService folderService, ProjectService projectService) {
     this.folderService = folderService;
+    this.projectService = projectService;
   }
 
   @GetMapping
@@ -35,12 +38,14 @@ public class FolderController {
     req.setLimit(limit);
     req.setLastEvaluatedKey(lastEvaluatedKey);
     req.setSearch(search);
+    projectService.getProjectById(projectId);
     return ResponseEntity.ok(folderService.listFolders(projectId, req));
   }
 
   @PostMapping
   public ResponseEntity<FolderDto> createFolder(@PathVariable String projectId, @Valid @RequestBody CreateFolderRequest req) {
     log.info("Request to create folder in project {}: {}", projectId, req.getName());
+    projectService.getProjectById(projectId);
     return ResponseEntity.status(HttpStatus.CREATED).body(folderService.createFolder(projectId, req));
   }
 

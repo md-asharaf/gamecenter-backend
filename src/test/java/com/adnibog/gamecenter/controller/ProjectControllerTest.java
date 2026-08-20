@@ -27,11 +27,13 @@ import com.adnibog.gamecenter.dto.request.CreateProjectRequest;
 import com.adnibog.gamecenter.dto.request.PaginationRequest;
 import com.adnibog.gamecenter.dto.model.ProjectDto;
 import com.adnibog.gamecenter.dto.response.ProjectPageResponse;
-import com.adnibog.gamecenter.exception.ForbiddenException;
 import com.adnibog.gamecenter.interceptor.AdminAuthInterceptor;
 import com.adnibog.gamecenter.interceptor.ProjectInterceptor;
 import com.adnibog.gamecenter.service.JwtService;
 import com.adnibog.gamecenter.service.ProjectService;
+import com.adnibog.gamecenter.service.UserService;
+import com.adnibog.gamecenter.entity.User;
+import com.adnibog.gamecenter.entity.Role;
 
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(controllers = ProjectController.class, excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
@@ -47,8 +49,16 @@ class ProjectControllerTest {
   @MockBean
   private JwtService jwtService;
 
+  @MockBean
+  private UserService userService;
+
   @Test
   void createProject_Success() throws Exception {
+    User admin = new User();
+    admin.setId("admin_123");
+    admin.setRole(Role.SUPER_ADMIN);
+    when(userService.getUserEntityById("admin_123")).thenReturn(admin);
+
     ProjectDto projectDto = new ProjectDto();
     projectDto.setId("proj_123");
     projectDto.setName("Test Project");
@@ -68,8 +78,10 @@ class ProjectControllerTest {
 
   @Test
   void createProject_Forbidden_Returns403() throws Exception {
-    when(projectService.createProject(any(), any(CreateProjectRequest.class)))
-        .thenThrow(new ForbiddenException("Only SUPER_ADMIN can create projects"));
+    User admin = new User();
+    admin.setId("subadmin_123");
+    admin.setRole(Role.SUB_ADMIN);
+    when(userService.getUserEntityById("subadmin_123")).thenReturn(admin);
 
     String json = "{\"name\":\"Test Project\"}";
 
@@ -79,16 +91,21 @@ class ProjectControllerTest {
         .content(json))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.success").value(false))
-        .andExpect(jsonPath("$.error").value("Only SUPER_ADMIN can create projects"));
+        .andExpect(jsonPath("$.error").value("Insufficient privileges to create a project."));
   }
 
   @Test
   void listProjects_Success() throws Exception {
+    User admin = new User();
+    admin.setId("admin_123");
+    admin.setRole(Role.SUPER_ADMIN);
+    when(userService.getUserEntityById("admin_123")).thenReturn(admin);
+
     ProjectDto projectDto = new ProjectDto();
     projectDto.setId("proj_123");
     projectDto.setName("Test Project");
 
-    when(projectService.listProjects(eq("admin_123"), any(PaginationRequest.class)))
+    when(projectService.listProjects(eq(true), any(), any(PaginationRequest.class)))
         .thenReturn(new ProjectPageResponse(List.of(projectDto), null));
 
     mockMvc.perform(get("/projects")
@@ -100,6 +117,11 @@ class ProjectControllerTest {
 
   @Test
   void deleteProject_Success() throws Exception {
+    User admin = new User();
+    admin.setId("admin_123");
+    admin.setRole(Role.SUPER_ADMIN);
+    when(userService.getUserEntityById("admin_123")).thenReturn(admin);
+
     mockMvc.perform(delete("/projects/proj_123")
         .requestAttr("adminId", "admin_123"))
         .andExpect(status().isOk())

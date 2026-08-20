@@ -18,6 +18,11 @@ import com.adnibog.gamecenter.dto.model.ProjectDto;
 import com.adnibog.gamecenter.dto.response.ProjectPageResponse;
 
 import com.adnibog.gamecenter.service.ProjectService;
+import com.adnibog.gamecenter.service.UserService;
+import com.adnibog.gamecenter.entity.User;
+import com.adnibog.gamecenter.entity.Role;
+import com.adnibog.gamecenter.exception.ForbiddenException;
+import lombok.extern.slf4j.Slf4j;
 
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestAttribute;
@@ -28,6 +33,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import com.adnibog.gamecenter.dto.request.PaginationRequest;
 
+@Slf4j
 @Tag(name = "Projects", description = "Endpoints for managing projects")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
@@ -35,9 +41,11 @@ import com.adnibog.gamecenter.dto.request.PaginationRequest;
 public class ProjectController {
 
   private final ProjectService projectService;
+  private final UserService userService;
 
-  public ProjectController(ProjectService projectService) {
+  public ProjectController(ProjectService projectService, UserService userService) {
     this.projectService = projectService;
+    this.userService = userService;
   }
 
   @Operation(summary = "Create Project", description = "Creates a new project. Requires SUPER_ADMIN role.")
@@ -45,6 +53,11 @@ public class ProjectController {
   public ResponseEntity<ApiResponse<ProjectDto>> createProject(
       @RequestAttribute("adminId") String adminId,
       @RequestBody(required = false) CreateProjectRequest req) {
+    User admin = userService.getUserEntityById(adminId);
+    if (admin.getRole() != Role.SUPER_ADMIN) {
+      log.warn("Admin {} attempted to create a project but is not a SUPER_ADMIN", adminId);
+      throw new ForbiddenException("Insufficient privileges to create a project.");
+    }
     ProjectDto project = projectService.createProject(adminId, req);
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(project, "Project created successfully."));
   }
@@ -54,7 +67,9 @@ public class ProjectController {
   public ResponseEntity<ApiResponse<ProjectPageResponse>> listProjects(
       @RequestAttribute("adminId") String adminId,
       @ModelAttribute PaginationRequest pageReq) {
-    ProjectPageResponse projects = projectService.listProjects(adminId, pageReq);
+    User admin = userService.getUserEntityById(adminId);
+    boolean isSuperAdmin = admin.getRole() == Role.SUPER_ADMIN;
+    ProjectPageResponse projects = projectService.listProjects(isSuperAdmin, admin.getProjectIds(), pageReq);
     return ResponseEntity.ok(ApiResponse.success(projects));
   }
 
@@ -79,6 +94,11 @@ public class ProjectController {
   public ResponseEntity<ApiResponse<Void>> deleteProject(
       @RequestAttribute("adminId") String adminId, 
       @PathVariable String id) {
+    User admin = userService.getUserEntityById(adminId);
+    if (admin.getRole() != Role.SUPER_ADMIN) {
+      log.warn("Admin {} attempted to delete project {} but is not a SUPER_ADMIN", adminId, id);
+      throw new ForbiddenException("Insufficient privileges to delete a project.");
+    }
     projectService.deleteProject(adminId, id);
     return ResponseEntity.ok(ApiResponse.success(null, "Project deleted successfully."));
   }

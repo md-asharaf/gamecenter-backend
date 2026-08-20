@@ -21,7 +21,6 @@ import com.adnibog.gamecenter.dto.model.ProjectDto;
 import com.adnibog.gamecenter.dto.model.QuestionDto;
 import com.adnibog.gamecenter.entity.Question;
 import com.adnibog.gamecenter.exception.BadRequestException;
-import com.adnibog.gamecenter.mapper.ProjectMapper;
 import com.adnibog.gamecenter.mapper.QuestionMapper;
 import com.adnibog.gamecenter.repository.QuestionRepository;
 
@@ -34,17 +33,11 @@ class QuestionServiceTest {
   @Mock
   private QuestionMapper questionMapper;
 
-  @Mock
-  private ProjectService projectService;
-
-  @Mock
-  private ProjectMapper projectMapper;
-
   private QuestionService questionService;
 
   @BeforeEach
   void setUp() {
-    questionService = new QuestionService(questionRepository, questionMapper, projectService, projectMapper);
+    questionService = new QuestionService(questionRepository, questionMapper);
   }
 
   @Test
@@ -52,10 +45,9 @@ class QuestionServiceTest {
     String projectId = "proj1";
 
     ProjectDto projectDto = new ProjectDto();
+    projectDto.setId(projectId);
     projectDto.setField1Label("Word");
     projectDto.setField2Label("Meaning");
-
-    when(projectService.getProjectById(projectId)).thenReturn(projectDto);
 
     CreateQuestionRequest req = new CreateQuestionRequest();
     req.setDynamicFields(new HashMap<>(Map.of("Word", "Apple", "Meaning", "A fruit")));
@@ -67,7 +59,7 @@ class QuestionServiceTest {
 
     when(questionMapper.toDto(any(Question.class), eq(projectDto))).thenReturn(expectedDto);
 
-    QuestionDto result = questionService.createQuestion(projectId, "folder1", req);
+    QuestionDto result = questionService.createQuestion(projectDto, "folder1", req);
 
     assertNotNull(result);
     verify(questionRepository).save(any(Question.class));
@@ -78,15 +70,14 @@ class QuestionServiceTest {
     String projectId = "proj1";
 
     ProjectDto projectDto = new ProjectDto();
+    projectDto.setId(projectId);
     projectDto.setField1Label("Word");
     projectDto.setField2Label("Meaning");
-
-    when(projectService.getProjectById(projectId)).thenReturn(projectDto);
 
     CreateQuestionRequest req = new CreateQuestionRequest();
     req.setDynamicFields(new HashMap<>(Map.of("Meaning", "A fruit")));
 
-    assertThrows(BadRequestException.class, () -> questionService.createQuestion(projectId, "folder1", req));
+    assertThrows(BadRequestException.class, () -> questionService.createQuestion(projectDto, "folder1", req));
     verify(questionRepository, never()).save(any());
   }
 
@@ -96,9 +87,8 @@ class QuestionServiceTest {
     String qId = "q1";
 
     ProjectDto projectDto = new ProjectDto();
+    projectDto.setId(projectId);
     projectDto.setField1Label("Word");
-
-    when(projectService.getProjectById(projectId)).thenReturn(projectDto);
 
     Question existing = new Question();
     existing.setId(qId);
@@ -115,7 +105,7 @@ class QuestionServiceTest {
 
     when(questionMapper.toDto(existing, projectDto)).thenReturn(expectedDto);
 
-    QuestionDto result = questionService.updateQuestion(projectId, qId, req);
+    QuestionDto result = questionService.updateQuestion(projectDto, qId, req);
 
     assertNotNull(result);
     assertEquals("NewWord", existing.getField1());

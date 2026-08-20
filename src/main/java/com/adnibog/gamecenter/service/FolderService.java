@@ -28,19 +28,16 @@ public class FolderService {
 
   private final FolderRepository folderRepository;
   private final FolderMapper folderMapper;
-  private final ProjectService projectService;
   private final ApplicationEventPublisher eventPublisher;
 
   public FolderService(FolderRepository folderRepository, FolderMapper folderMapper,
-      ProjectService projectService, ApplicationEventPublisher eventPublisher) {
+      ApplicationEventPublisher eventPublisher) {
     this.folderRepository = folderRepository;
     this.folderMapper = folderMapper;
-    this.projectService = projectService;
     this.eventPublisher = eventPublisher;
   }
 
   public FolderPageResponse listFolders(String projectId, PaginationRequest req) {
-    projectService.getProjectById(projectId);
     FolderPage page = folderRepository.getFolders(projectId, req);
     List<FolderDto> items = page.getItems().stream()
         .map(folderMapper::toDto)
@@ -49,8 +46,6 @@ public class FolderService {
   }
 
   public FolderDto createFolder(String projectId, CreateFolderRequest req) {
-    projectService.getProjectById(projectId);
-
     boolean isFirstFolder = !folderRepository.hasAnyFolders(projectId);
 
     boolean exists = folderRepository.existsByProjectIdAndName(projectId, req.getName(), null);

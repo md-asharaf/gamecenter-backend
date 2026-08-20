@@ -10,13 +10,13 @@ import com.adnibog.gamecenter.dto.response.ProjectPageResponse;
 import com.adnibog.gamecenter.repository.pagination.ProjectPage;
 
 import com.adnibog.gamecenter.entity.Project;
-import com.adnibog.gamecenter.entity.User;
 import com.adnibog.gamecenter.exception.BadRequestException;
 import com.adnibog.gamecenter.exception.ConflictException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.ProjectMapper;
 import com.adnibog.gamecenter.repository.ProjectRepository;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 
 import com.adnibog.gamecenter.event.FolderCreatedEvent;
 import com.adnibog.gamecenter.event.FolderDeletedEvent;
@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.adnibog.gamecenter.entity.Role;
-import com.adnibog.gamecenter.exception.ForbiddenException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -36,19 +34,15 @@ import lombok.extern.slf4j.Slf4j;
 public class ProjectService {
 
   private final ProjectRepository projectRepository;
-  private final UserService userService;
   private final ProjectMapper projectMapper;
   private final ApplicationEventPublisher eventPublisher;
-  private final AppStatsService appStatsService;
 
   public ProjectService(ProjectRepository projectRepository,
-      UserService userService, ProjectMapper projectMapper,
-      ApplicationEventPublisher eventPublisher, AppStatsService appStatsService) {
+      ProjectMapper projectMapper,
+      ApplicationEventPublisher eventPublisher) {
     this.projectRepository = projectRepository;
-    this.userService = userService;
     this.projectMapper = projectMapper;
     this.eventPublisher = eventPublisher;
-    this.appStatsService = appStatsService;
   }
 
   private void validateFieldLabel(String label) {
@@ -72,12 +66,6 @@ public class ProjectService {
   }
 
   public ProjectDto createProject(String adminId, CreateProjectRequest req) {
-    User admin = userService.getUserEntityById(adminId);
-
-    if (admin.getRole() != Role.SUPER_ADMIN) {
-      log.warn("Admin {} attempted to create a project but is not a SUPER_ADMIN", adminId);
-      throw new ForbiddenException("Insufficient privileges to create a project.");
-    }
 
     if (req != null && req.getName() != null && projectRepository.findByName(req.getName()).isPresent()) {
       throw new ConflictException("Project name is already in use.");
@@ -109,20 +97,19 @@ public class ProjectService {
     return projectMapper.toDto(project);
   }
 
-  public ProjectPageResponse listProjects(String adminId, PaginationRequest pageReq) {
-    User admin = userService.getUserEntityById(adminId);
-
-    if (admin.getRole() == Role.SUPER_ADMIN) {
+  public ProjectPageResponse listProjects(boolean isSuperAdmin, java.util.Set<String> allowedProjectIds,
+      PaginationRequest pageReq) {
+    if (isSuperAdmin) {
       ProjectPage page = projectRepository.findProjects(pageReq);
       List<ProjectDto> dtos = page.getItems().stream().map(projectMapper::toDto).collect(Collectors.toList());
       return new ProjectPageResponse(dtos, page.getLastEvaluatedKey());
     }
 
-    if (admin.getProjectIds() == null || admin.getProjectIds().isEmpty()) {
+    if (allowedProjectIds == null || allowedProjectIds.isEmpty()) {
       return new ProjectPageResponse(new ArrayList<>(), null);
     }
 
-    List<ProjectDto> allAllowed = admin.getProjectIds().stream()
+    List<ProjectDto> allAllowed = allowedProjectIds.stream()
         .map(projectId -> projectRepository.findById(projectId).orElse(null))
         .filter(project -> project != null)
         .filter(project -> pageReq.getSearch() == null || pageReq.getSearch().trim().isEmpty()
@@ -147,17 +134,17 @@ public class ProjectService {
     return new ProjectPageResponse(paged, nextKey);
   }
 
-  public List<ProjectDto> getMostRecentProjectsForAdmin(String adminId, int limit) {
-    User admin = userService.getUserEntityById(adminId);
-    if (admin.getRole() == Role.SUPER_ADMIN) {
+  public List<ProjectDto> getMostRecentProjects(boolean isSuperAdmin, java.util.Set<String> allowedProjectIds,
+      int limit) {
+    if (isSuperAdmin) {
       return projectRepository.getMostRecentProjects(limit).stream()
           .map(projectMapper::toDto)
           .collect(Collectors.toList());
     }
-    if (admin.getProjectIds() == null || admin.getProjectIds().isEmpty()) {
+    if (allowedProjectIds == null || allowedProjectIds.isEmpty()) {
       return new ArrayList<>();
     }
-    List<ProjectDto> projects = admin.getProjectIds().stream()
+    List<ProjectDto> projects = allowedProjectIds.stream()
         .map(id -> projectRepository.findById(id))
         .filter(opt -> opt.isPresent())
         .map(opt -> projectMapper.toDto(opt.get()))
@@ -172,12 +159,8 @@ public class ProjectService {
     return projects.stream().limit(limit).collect(Collectors.toList());
   }
 
-  public long getTotalProjectsForAdmin(String adminId) {
-    User admin = userService.getUserEntityById(adminId);
-    if (admin.getRole() == Role.SUPER_ADMIN) {
-      return appStatsService.getTotalProjects();
-    }
-    return admin.getProjectIds() != null ? admin.getProjectIds().size() : 0;
+  public long getTotalProjects(java.util.Set<String> allowedProjectIds) {
+    return allowedProjectIds != null ? allowedProjectIds.size() : 0;
   }
 
   public ProjectDto updateProject(String projectId, UpdateProjectRequest req) {
@@ -239,7 +222,17 @@ public class ProjectService {
     projectRepository.save(project);
   }
 
-  @org.springframework.context.event.EventListener
+  public void deleteProject(String adminId, String projectId) {
+    getProjectEntityById(projectId);
+
+    eventPublisher.publishEvent(new ProjectDeletedEvent(this, projectId));
+
+    projectRepository.deleteById(projectId);
+
+    log.info("Project {} successfully deleted by Admin {}", projectId, adminId);
+  }
+
+  @EventListener
   public void handleFolderCreated(FolderCreatedEvent event) {
     if (event.isFirstFolder()) {
       updateQuizFolderId(event.getProjectId(), event.getFolderId());
@@ -248,7 +241,7 @@ public class ProjectService {
     }
   }
 
-  @org.springframework.context.event.EventListener
+  @EventListener
   public void handleFolderDeleted(FolderDeletedEvent event) {
     if (event.isLastFolder()) {
       updateQuizFolderId(event.getProjectId(), null);
@@ -260,22 +253,5 @@ public class ProjectService {
         log.info("Unset quiz folder for project {} because the active quiz folder was deleted", event.getProjectId());
       }
     }
-  }
-
-  public void deleteProject(String adminId, String projectId) {
-    User admin = userService.getUserEntityById(adminId);
-
-    if (admin.getRole() != Role.SUPER_ADMIN) {
-      log.warn("Admin {} attempted to delete project {} but is not a SUPER_ADMIN", adminId, projectId);
-      throw new ForbiddenException("Insufficient privileges to delete a project.");
-    }
-
-    getProjectEntityById(projectId);
-
-    eventPublisher.publishEvent(new ProjectDeletedEvent(this, projectId));
-
-    projectRepository.deleteById(projectId);
-
-    log.info("Project {} successfully deleted by Admin {}", projectId, adminId);
   }
 }
