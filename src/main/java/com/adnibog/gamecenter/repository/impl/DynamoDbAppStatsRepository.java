@@ -29,31 +29,55 @@ public class DynamoDbAppStatsRepository implements AppStatsRepository {
 
   @Override
   public void incrementTotalAdmins() {
-    updateAdminCount(1);
+    updateCount("TOTAL_ADMINS", 1);
   }
 
   @Override
   public void decrementTotalAdmins() {
-    updateAdminCount(-1);
+    updateCount("TOTAL_ADMINS", -1);
   }
 
   @Override
   public long getTotalAdmins() {
-    AppStats stats = statsTable.getItem(Key.builder().partitionValue(AppStats.GLOBAL_STATS_ID).build());
-    return stats != null && stats.getTotalAdmins() != null ? stats.getTotalAdmins() : 0L;
+    AppStats stats = getStats("TOTAL_ADMINS");
+    return stats != null ? stats.getCount() : 0;
   }
 
-  private void updateAdminCount(int incrementValue) {
+  @Override
+  public void incrementTotalProjects() {
+    updateCount("TOTAL_PROJECTS", 1);
+  }
+
+  @Override
+  public void decrementTotalProjects() {
+    updateCount("TOTAL_PROJECTS", -1);
+  }
+
+  @Override
+  public long getTotalProjects() {
+    AppStats stats = getStats("TOTAL_PROJECTS");
+    return stats != null ? stats.getCount() : 0;
+  }
+
+  private AppStats getStats(String id) {
+    return statsTable.getItem(Key.builder().partitionValue(id).build());
+  }
+
+  private void updateCount(String id, int incrementValue) {
     Map<String, AttributeValue> key = new HashMap<>();
-    key.put("id", AttributeValue.builder().s(AppStats.GLOBAL_STATS_ID).build());
+    key.put("id", AttributeValue.builder().s(id).build());
 
     Map<String, AttributeValue> expressionValues = new HashMap<>();
     expressionValues.put(":inc", AttributeValue.builder().n(String.valueOf(incrementValue)).build());
 
+    Map<String, String> expressionNames = new HashMap<>();
+    expressionNames.put("#cnt", "count");
+
     UpdateItemRequest request = UpdateItemRequest.builder()
         .tableName("AppStats")
         .key(key)
-        .updateExpression("ADD totalAdmins :inc")
+        .updateExpression("ADD #cnt :inc")
+        .expressionAttributeNames(expressionNames)
         .expressionAttributeValues(expressionValues)
         .build();
 

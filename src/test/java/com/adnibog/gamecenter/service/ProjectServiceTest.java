@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.adnibog.gamecenter.dto.request.CreateProjectRequest;
@@ -23,6 +24,7 @@ import com.adnibog.gamecenter.exception.ConflictException;
 import com.adnibog.gamecenter.exception.ForbiddenException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.ProjectMapper;
+import com.adnibog.gamecenter.repository.AppStatsRepository;
 import com.adnibog.gamecenter.repository.ProjectRepository;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -43,11 +45,16 @@ class ProjectServiceTest {
   @Mock
   private ProjectMapper projectMapper;
 
+  @Mock
+  private AppStatsRepository appStatsRepository;
+
   private ProjectService projectService;
 
   @BeforeEach
   void setUp() {
-    projectService = new ProjectService(projectRepository, userService, projectMapper, eventPublisher);
+    MockitoAnnotations.openMocks(this);
+    projectService = new ProjectService(projectRepository, userService, projectMapper, eventPublisher,
+        appStatsRepository);
   }
 
   @Test

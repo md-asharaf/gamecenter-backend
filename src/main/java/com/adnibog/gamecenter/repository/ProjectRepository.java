@@ -18,4 +18,6 @@ public interface ProjectRepository {
   List<Project> findAll();
 
   ProjectPage findProjects(int limit, String lastEvaluatedKeyId, String searchKeyword);
+
+  List<Project> getMostRecentProjects(int limit);
 }

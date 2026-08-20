@@ -15,6 +15,7 @@ import com.adnibog.gamecenter.exception.ConflictException;
 import com.adnibog.gamecenter.exception.NotFoundException;
 import com.adnibog.gamecenter.mapper.ProjectMapper;
 import com.adnibog.gamecenter.repository.ProjectRepository;
+import com.adnibog.gamecenter.repository.AppStatsRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import com.adnibog.gamecenter.event.ProjectDeletedEvent;
 
@@ -35,14 +36,16 @@ public class ProjectService {
   private final UserService userService;
   private final ProjectMapper projectMapper;
   private final ApplicationEventPublisher eventPublisher;
+  private final AppStatsRepository appStatsRepository;
 
   public ProjectService(ProjectRepository projectRepository,
       UserService userService, ProjectMapper projectMapper,
-      ApplicationEventPublisher eventPublisher) {
+      ApplicationEventPublisher eventPublisher, AppStatsRepository appStatsRepository) {
     this.projectRepository = projectRepository;
     this.userService = userService;
     this.projectMapper = projectMapper;
     this.eventPublisher = eventPublisher;
+    this.appStatsRepository = appStatsRepository;
   }
 
   private void validateFieldLabel(String label) {
@@ -50,7 +53,8 @@ public class ProjectService {
       return;
     }
     String lower = label.trim().toLowerCase();
-    if (lower.equals("id") || lower.equals("createdat") || lower.equals("updatedat") || lower.equals("projects") || lower.equals("dynamicfields")) {
+    if (lower.equals("id") || lower.equals("createdat") || lower.equals("updatedat") || lower.equals("projects")
+        || lower.equals("dynamicfields")) {
       throw new BadRequestException("Field label '" + label + "' is a reserved keyword and cannot be used.");
     }
   }
@@ -150,10 +154,43 @@ public class ProjectService {
       return new ArrayList<>();
     }
     return admin.getProjectIds().stream()
-        .map(projectId -> projectRepository.findById(projectId).orElse(null))
-        .filter(project -> project != null)
-        .map(projectMapper::toDto)
+        .map(id -> projectRepository.findById(id))
+        .filter(opt -> opt.isPresent())
+        .map(opt -> projectMapper.toDto(opt.get()))
         .collect(Collectors.toList());
+  }
+
+  public List<ProjectDto> getMostRecentProjectsForAdmin(String adminId, int limit) {
+    User admin = userService.getUserEntityById(adminId);
+    if (admin.getRole() == Role.SUPER_ADMIN) {
+      return projectRepository.getMostRecentProjects(limit).stream()
+          .map(projectMapper::toDto)
+          .collect(Collectors.toList());
+    }
+    if (admin.getProjectIds() == null || admin.getProjectIds().isEmpty()) {
+      return new ArrayList<>();
+    }
+    List<ProjectDto> projects = admin.getProjectIds().stream()
+        .map(id -> projectRepository.findById(id))
+        .filter(opt -> opt.isPresent())
+        .map(opt -> projectMapper.toDto(opt.get()))
+        .collect(Collectors.toList());
+
+    projects.sort((p1, p2) -> {
+      long t1 = p1.getCreatedAt() != null ? p1.getCreatedAt() : 0L;
+      long t2 = p2.getCreatedAt() != null ? p2.getCreatedAt() : 0L;
+      return Long.compare(t2, t1);
+    });
+
+    return projects.stream().limit(limit).collect(Collectors.toList());
+  }
+
+  public long getTotalProjectsForAdmin(String adminId) {
+    User admin = userService.getUserEntityById(adminId);
+    if (admin.getRole() == Role.SUPER_ADMIN) {
+      return appStatsRepository.getTotalProjects();
+    }
+    return admin.getProjectIds() != null ? admin.getProjectIds().size() : 0;
   }
 
   public ProjectDto updateProject(String projectId, UpdateProjectRequest req) {
@@ -214,6 +251,8 @@ public class ProjectService {
     }
 
     getProjectEntityById(projectId);
+
+    appStatsRepository.decrementTotalProjects();
 
     eventPublisher.publishEvent(new ProjectDeletedEvent(this, projectId));
     projectRepository.deleteById(projectId);

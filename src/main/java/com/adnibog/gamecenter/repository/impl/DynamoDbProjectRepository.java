@@ -7,11 +7,13 @@ import org.springframework.stereotype.Repository;
 import com.adnibog.gamecenter.entity.Project;
 
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
+import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
@@ -109,5 +111,25 @@ public class DynamoDbProjectRepository implements ProjectRepository {
     }
 
     return new ProjectPage(resultItems, nextKey);
+  }
+
+  @Override
+  public List<Project> getMostRecentProjects(int limit) {
+    DynamoDbIndex<Project> index = projectTable.index("type-createdAt-index");
+    QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue("PROJECT").build());
+
+    SdkIterable<Page<Project>> pagedResults = index.query(r -> r
+        .queryConditional(conditional)
+        .scanIndexForward(false)
+        .limit(limit));
+
+    List<Project> projects = new ArrayList<>();
+    for (Page<Project> page : pagedResults) {
+      projects.addAll(page.items());
+      if (projects.size() >= limit) {
+        return projects.subList(0, limit);
+      }
+    }
+    return projects;
   }
 }

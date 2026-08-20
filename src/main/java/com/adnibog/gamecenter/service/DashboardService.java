@@ -1,19 +1,14 @@
 package com.adnibog.gamecenter.service;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
 import com.adnibog.gamecenter.dto.response.DashboardStatsResponse;
 import com.adnibog.gamecenter.dto.model.GrowthData;
+import com.adnibog.gamecenter.dto.model.ProjectStat;
 import com.adnibog.gamecenter.dto.model.ProjectDto;
-import com.adnibog.gamecenter.dto.response.DashboardStatsResponse.ProjectStat;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,39 +27,19 @@ public class DashboardService {
   }
 
   public DashboardStatsResponse getDashboardStats(String adminId) {
-    List<ProjectDto> allProjects = projectService.getAllProjectsForAdmin(adminId);
+    long totalProjects = projectService.getTotalProjectsForAdmin(adminId);
     Integer totalAdmins = userService.getTotalAdminCount();
 
-    Map<String, Integer> chartDataMap = new LinkedHashMap<>();
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d").withZone(ZoneId.systemDefault());
-
-    for (int i = 6; i >= 0; i--) {
-      String dateLabel = formatter.format(Instant.now().minusSeconds(i * 86400L));
-      chartDataMap.put(dateLabel, 0);
-    }
-
-    for (ProjectDto p : allProjects) {
-      if (p.getCreatedAt() != null && p.getCreatedAt() > 0) {
-        String label = formatter.format(Instant.ofEpochMilli(p.getCreatedAt()));
-        if (chartDataMap.containsKey(label)) {
-          chartDataMap.put(label, chartDataMap.get(label) + 1);
-        }
-      }
-    }
-
-    List<GrowthData> projectGrowth = new ArrayList<>();
-    int cumulative = 0;
-    for (Map.Entry<String, Integer> entry : chartDataMap.entrySet()) {
-      cumulative += entry.getValue();
-      projectGrowth.add(new GrowthData(entry.getKey(), cumulative));
-    }
+    List<ProjectDto> recentProjects = projectService.getMostRecentProjectsForAdmin(adminId, 5);
 
     List<ProjectStat> projectStats = new ArrayList<>();
-    for (ProjectDto p : allProjects) {
+    for (ProjectDto p : recentProjects) {
       long qCount = questionService.countByProjectId(p.getId());
       projectStats.add(new ProjectStat(p.getId(), p.getName(), qCount));
     }
 
-    return new DashboardStatsResponse(allProjects.size(), totalAdmins, projectGrowth, projectStats);
+    List<GrowthData> projectGrowth = new ArrayList<>();
+
+    return new DashboardStatsResponse((int) totalProjects, totalAdmins, projectGrowth, projectStats);
   }
 }

@@ -17,7 +17,7 @@ public class AppStats {
   public static final String GLOBAL_STATS_ID = "GLOBAL_STATS";
 
   private String id;
-  private Long totalAdmins;
+  private Long count;
 
   @DynamoDbPartitionKey
   public String getId() {
