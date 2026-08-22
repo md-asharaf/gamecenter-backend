@@ -9,7 +9,9 @@ import com.adnibog.gamecenter.exception.BadRequestException;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,14 +32,18 @@ public class QuizService {
 
     String folderId = projectDto.getQuizFolderId();
     if (folderId == null || folderId.trim().isEmpty()) {
-      throw new BadRequestException("This project does not have an active quiz folder configured. Admins must set one first.");
+      throw new BadRequestException(
+          "This project does not have an active quiz folder configured. Admins must set one first.");
     }
 
-    int numberOfQuestions = projectDto.getNumberOfQuestionsInQuiz() != null ? projectDto.getNumberOfQuestionsInQuiz() : 10;
+    int numberOfQuestions = projectDto.getNumberOfQuestionsInQuiz() != null ? projectDto.getNumberOfQuestionsInQuiz()
+        : 10;
     String mainField = projectDto.getMainQuestionField() != null ? projectDto.getMainQuestionField() : "field1";
+    boolean isField2Main = "field2".equalsIgnoreCase(mainField);
 
-    int amountToFetch = Math.max(numberOfQuestions * 4, 50);
-    List<Question> allQuestions = new ArrayList<>(questionService.getRandomQuestionsByFolder(projectId, folderId, amountToFetch));
+    int amountToFetch = Math.max(numberOfQuestions * 6, 100);
+    List<Question> allQuestions = new ArrayList<>(
+        questionService.getRandomQuestionsByFolder(projectId, folderId, amountToFetch));
 
     if (allQuestions.size() < numberOfQuestions) {
       throw new BadRequestException("Not enough questions in database to form a quiz");
@@ -50,27 +56,36 @@ public class QuizService {
 
     List<QuizQuestion> quiz = new ArrayList<>();
     for (Question q : selectedQuestions) {
-      List<Question> distractors = new ArrayList<>(allQuestions);
-      distractors.remove(q);
-      Collections.shuffle(distractors);
+      String correctAnswer = isField2Main ? q.getField1() : q.getField2();
+      if (correctAnswer == null)
+        correctAnswer = "";
 
       List<String> options = new ArrayList<>();
+      options.add(correctAnswer);
 
-      if ("field2".equalsIgnoreCase(mainField)) {
-        options.add(q.getField1());
-        for (int i = 0; i < 3 && i < distractors.size(); i++) {
-          options.add(distractors.get(i).getField1());
-        }
-      } else {
-        options.add(q.getField2());
-        for (int i = 0; i < 3 && i < distractors.size(); i++) {
-          options.add(distractors.get(i).getField2());
+      Set<String> seenOptionsLower = new HashSet<>();
+      seenOptionsLower.add(correctAnswer.trim().toLowerCase());
+
+      List<Question> shuffledAll = new ArrayList<>(allQuestions);
+      Collections.shuffle(shuffledAll);
+
+      for (Question distQ : shuffledAll) {
+        if (options.size() >= 4)
+          break;
+        String distractor = isField2Main ? distQ.getField1() : distQ.getField2();
+        if (distractor != null && !distractor.trim().isEmpty()) {
+          String lower = distractor.trim().toLowerCase();
+          if (!seenOptionsLower.contains(lower)) {
+            seenOptionsLower.add(lower);
+            options.add(distractor);
+          }
         }
       }
 
       Collections.shuffle(options);
+
       QuizQuestion qq = new QuizQuestion();
-      qq.setAnswer("field2".equalsIgnoreCase(mainField) ? q.getField1() : q.getField2());
+      qq.setAnswer(correctAnswer);
       qq.setField1(q.getField1());
       qq.setField2(q.getField2());
       qq.setField3(q.getField3());
