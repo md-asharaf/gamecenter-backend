@@ -51,20 +51,20 @@ class DocxQuestionParserTest {
 
     ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
 
-    List<Question> questions = parser.parse(in);
+    List<Question> questions = parser.parse(in, null);
 
     assertNotNull(questions);
     assertEquals(2, questions.size());
 
     Question q1 = questions.get(0);
     assertEquals("Apple", q1.getField1());
-    assertEquals("A fruit", q1.getField3());
-    assertEquals("I eat apple", q1.getField2());
+    assertEquals("A fruit", q1.getField2());
+    assertEquals("I eat apple", q1.getField3());
 
     Question q2 = questions.get(1);
     assertEquals("Dog", q2.getField1());
-    assertEquals("An animal", q2.getField3());
-    assertEquals("I pet dog", q2.getField2());
+    assertEquals("An animal", q2.getField2());
+    assertEquals("I pet dog", q2.getField3());
   }
 
   @Test
@@ -85,7 +85,7 @@ class DocxQuestionParserTest {
 
     ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
 
-    List<Question> questions = parser.parse(in);
+    List<Question> questions = parser.parse(in, null);
 
     assertNotNull(questions);
     assertEquals(0, questions.size());

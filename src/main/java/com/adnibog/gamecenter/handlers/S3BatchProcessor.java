@@ -1,6 +1,8 @@
 package com.adnibog.gamecenter.handlers;
 
+import com.adnibog.gamecenter.entity.Project;
 import com.adnibog.gamecenter.entity.Question;
+import com.adnibog.gamecenter.service.ProjectService;
 import com.adnibog.gamecenter.service.QuestionService;
 import com.adnibog.gamecenter.service.storage.StorageService;
 import com.adnibog.gamecenter.service.UploadJobService;
@@ -24,13 +26,15 @@ public class S3BatchProcessor {
   private final QuestionParserFactory parserFactory;
   private final StorageService storageService;
   private final UploadJobService uploadJobService;
+  private final ProjectService projectService;
 
   public S3BatchProcessor(QuestionService questionService, QuestionParserFactory parserFactory,
-      StorageService storageService, UploadJobService uploadJobService) {
+      StorageService storageService, UploadJobService uploadJobService, ProjectService projectService) {
     this.uploadJobService = uploadJobService;
     this.questionService = questionService;
     this.parserFactory = parserFactory;
     this.storageService = storageService;
+    this.projectService = projectService;
   }
 
   public String process(S3Event s3Event) {
@@ -53,13 +57,26 @@ public class S3BatchProcessor {
 
       try (InputStream s3Stream = storageService.getFileStream(bucket, key)) {
 
+        Project project = null;
+        if (!"default".equals(projectId)) {
+          try {
+            project = projectService.getProjectEntityById(projectId);
+          } catch (Exception e) {
+            log.warn("Project not found for id: {}", projectId);
+          }
+        }
+
         List<Question> questions = new ArrayList<>();
         Optional<QuestionParser> parserOpt = parserFactory.getParser(key);
 
         if (parserOpt.isPresent()) {
-          questions = parserOpt.get().parse(s3Stream);
+          questions = parserOpt.get().parse(s3Stream, project);
         } else {
           throw new IllegalArgumentException("Unsupported file extension for key: " + key);
+        }
+
+        if (questions.isEmpty()) {
+          throw new IllegalArgumentException("File contains 0 valid questions. Please check the file format and headers.");
         }
 
         log.info("Parsed {} questions. Saving to database...", questions.size());
@@ -67,7 +84,7 @@ public class S3BatchProcessor {
         questionService.saveQuestionsBatch(projectId, folderId, questions);
 
         log.info("Successfully saved {} questions.", questions.size());
-        uploadJobService.updateJobStatus(key, "COMPLETED", null);
+        uploadJobService.updateJobStatus(key, "COMPLETED", questions.size() + " questions imported successfully.");
 
       } catch (Exception e) {
         log.error("Error processing file {} from bucket {}", key, bucket, e);

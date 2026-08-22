@@ -22,7 +22,9 @@ import com.adnibog.gamecenter.event.FolderCreatedEvent;
 import com.adnibog.gamecenter.event.FolderDeletedEvent;
 import com.adnibog.gamecenter.event.ProjectDeletedEvent;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -253,5 +255,30 @@ public class ProjectService {
         log.info("Unset quiz folder for project {} because the active quiz folder was deleted", event.getProjectId());
       }
     }
+  }
+
+  public byte[] getUploadTemplate(String projectId) {
+    Project project = getProjectEntityById(projectId);
+    String field1 = project.getField1Label() != null ? project.getField1Label() : "Field 1";
+    String field2 = project.getField2Label() != null ? project.getField2Label() : "Field 2";
+    String field3 = project.getField3Label() != null ? project.getField3Label() : "Field 3";
+    String csvContent = String.format("%s,%s,%s\n", field1, field2, field3);
+    return csvContent.getBytes(StandardCharsets.UTF_8);
+  }
+
+  public List<String> getUploadInstructions(String projectId) {
+    Project project = getProjectEntityById(projectId);
+    String field1 = project.getField1Label() != null ? project.getField1Label() : "Field 1";
+    String field2 = project.getField2Label() != null ? project.getField2Label() : "Field 2";
+    String field3 = project.getField3Label() != null ? project.getField3Label() : "Field 3";
+
+    return Arrays.asList(
+        "1. You can upload either a .csv file or a Word document (.docx) with a table.",
+        String.format("2. Your file must include columns named: '%s', '%s', and '%s' in the first row.", field1, field2,
+            field3),
+        "3. The order of the columns does not matter (capitalization and extra spaces also do not matter).",
+        "4. Any extra columns in your file will be safely ignored.",
+        "5. Rows that do not have data for all required columns will be skipped to prevent incomplete questions.",
+        "6. For best results, download the template CSV file and put your data under the provided headers.");
   }
 }

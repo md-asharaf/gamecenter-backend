@@ -1,6 +1,10 @@
 package com.adnibog.gamecenter.controller;
 
 import org.springframework.http.ResponseEntity;
+
+import java.util.List;
+
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -59,7 +63,8 @@ public class ProjectController {
       throw new ForbiddenException("Insufficient privileges to create a project.");
     }
     ProjectDto project = projectService.createProject(adminId, req);
-    return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(project, "Project created successfully."));
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(ApiResponse.success(project, "Project created successfully."));
   }
 
   @Operation(summary = "List Projects", description = "Lists all projects accessible to the current admin.")
@@ -92,7 +97,7 @@ public class ProjectController {
   @Operation(summary = "Delete Project", description = "Deletes a project and its questions. Requires SUPER_ADMIN role.")
   @DeleteMapping("/{id}")
   public ResponseEntity<ApiResponse<Void>> deleteProject(
-      @RequestAttribute("adminId") String adminId, 
+      @RequestAttribute("adminId") String adminId,
       @PathVariable String id) {
     User admin = userService.getUserEntityById(adminId);
     if (admin.getRole() != Role.SUPER_ADMIN) {
@@ -101,5 +106,24 @@ public class ProjectController {
     }
     projectService.deleteProject(adminId, id);
     return ResponseEntity.ok(ApiResponse.success(null, "Project deleted successfully."));
+  }
+
+  @Operation(summary = "Download Upload Template", description = "Downloads a CSV template with the exact headers required for the project.")
+  @GetMapping("/{id}/upload-template")
+  public ResponseEntity<byte[]> getUploadTemplate(@PathVariable String id) {
+    byte[] csvBytes = projectService.getUploadTemplate(id);
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=upload_template.csv");
+    headers.set(HttpHeaders.CONTENT_TYPE, "text/csv");
+
+    return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
+  }
+
+  @Operation(summary = "Get Upload Instructions", description = "Retrieves simple instructions for uploading question files for the project.")
+  @GetMapping("/{id}/upload-instructions")
+  public ResponseEntity<ApiResponse<List<String>>> getUploadInstructions(@PathVariable String id) {
+    List<String> instructions = projectService.getUploadInstructions(id);
+    return ResponseEntity.ok(ApiResponse.success(instructions, "Upload instructions retrieved successfully."));
   }
 }
