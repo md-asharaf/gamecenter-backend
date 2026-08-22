@@ -31,10 +31,10 @@ public class CsvQuestionParser implements QuestionParser {
           Question q = new Question();
           q.setField1(record.get(0).trim());
           if (record.size() > 1) {
-            q.setField3(record.get(1).trim());
+            q.setField2(record.get(1).trim());
           }
           if (record.size() > 2) {
-            q.setField2(record.get(2).trim());
+            q.setField3(record.get(2).trim());
           }
           questions.add(q);
         }

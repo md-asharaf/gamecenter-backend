@@ -34,8 +34,8 @@ public class DocxQuestionParser implements QuestionParser {
           if (row.getTableCells().size() >= 3) {
             Question q = new Question();
             q.setField1(row.getCell(0).getText().trim());
-            q.setField3(row.getCell(1).getText().trim());
-            q.setField2(row.getCell(2).getText().trim());
+            q.setField2(row.getCell(1).getText().trim());
+            q.setField3(row.getCell(2).getText().trim());
             questions.add(q);
           }
         }
